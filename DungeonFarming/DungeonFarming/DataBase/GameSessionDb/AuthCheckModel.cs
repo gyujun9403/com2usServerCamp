@@ -2,7 +2,7 @@
 {
     public class AuthCheckModel
     {
-        String account_id;
-        String token;
+        public String account_id { get; set; }
+        public String token { get; set; }
     }
 }

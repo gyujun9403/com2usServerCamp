@@ -1,12 +1,16 @@
-﻿namespace DungeonFarming.Middleware
+﻿using DungeonFarming.DataBase.GameSessionDb;
+
+namespace DungeonFarming.Middleware
 {
     public class AuthCheckMiddleware
     {
         private RequestDelegate _next;
+        private IGameSessionDb _gameSessionDb;
 
-        public AuthCheckMiddleware(RequestDelegate next)
+        public AuthCheckMiddleware(RequestDelegate next, IGameSessionDb gameSessionDb)
         {
             _next = next;
+            _gameSessionDb = gameSessionDb;
         }
         public void Invoke(HttpContext context)
         {
