@@ -12,7 +12,7 @@ namespace DungeonFarming.DataBase.AccountDb
         QueryFactory _db;
         public MysqlAccountDb(IConfiguration config, ILogger<MysqlAccountDb> logger)
         {
-            String connString = config.GetConnectionString("Mysql_Account");
+            var connString = config.GetConnectionString("Mysql_Account");
             var connection = new MySqlConnection(connString);
             var compiler = new MySqlCompiler();
             _db = new QueryFactory(connection, compiler);
@@ -24,13 +24,14 @@ namespace DungeonFarming.DataBase.AccountDb
             try
             {
                 // 현재 없는 유저인경우, 예외를 던지지 않는다. 필요시 수정.
-                if (await _db.Query("account").Where("user_id", userId).ExistsAsync())
+                if (await _db.Query("user_accounts").Where("user_id", userId).ExistsAsync())
                 {
-                    await _db.Query("account").Where("user_id", userId).DeleteAsync();
+                    await _db.Query("user_accounts").Where("user_id", userId).DeleteAsync();
                     _logger.ZLogInformation($"[DeleteAccount] Info : {userId}");
-                    return ErrorCode.ErrorNone;
+                    return ErrorCode.None;
                 }
                 _logger.ZLogError($"[DeleteAccount] Error : {userId} Invalid Id");
+
                 return ErrorCode.InvalidId;
             }
             catch(Exception ex)
@@ -41,14 +42,13 @@ namespace DungeonFarming.DataBase.AccountDb
             }
         }
 
-        public async Task<(ErrorCode, AccountDbModel?)> GetAccountInfo(string userId)
+        public async Task<(ErrorCode, UserAccountsTuple?)> GetAccountInfo(string userId)
         {
-            AccountDbModel rt;
             try
             {
-                rt = await _db.Query("account")
+                var rt = await _db.Query("user_accounts")
                     .Select("pk_id", "user_id", "salt", "hashed_password")
-                    .Where("user_id", userId).FirstAsync<AccountDbModel>();
+                    .Where("user_id", userId).FirstAsync<UserAccountsTuple>();
                 if (rt.pk_id == null || rt.user_id == "" 
                     || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
                 {
@@ -56,7 +56,8 @@ namespace DungeonFarming.DataBase.AccountDb
                     return (ErrorCode.InvalidId, null);
                 }
                 _logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
-                return (ErrorCode.ErrorNone, rt);
+
+                return (ErrorCode.None, rt);
             }
             catch(Exception ex)
             {
@@ -65,18 +66,18 @@ namespace DungeonFarming.DataBase.AccountDb
             }
         }
 
-        public async Task<ErrorCode> RegisteUser(AccountDbModel model)
+        public async Task<ErrorCode> RegisteUser(UserAccountsTuple model)
         {
             try
             {
-                await _db.Query("account").InsertAsync(new
+                await _db.Query("user_accounts").InsertAsync(new
                 {
                     user_id = model.user_id,
                     salt = model.salt,
                     hashed_password = model.hashed_password,
                 });
                 _logger.ZLogInformation($"[GetAccountInfo] Info : {model.user_id}");
-                return ErrorCode.ErrorNone;
+                return ErrorCode.None;
             }
             catch (Exception ex)
             {

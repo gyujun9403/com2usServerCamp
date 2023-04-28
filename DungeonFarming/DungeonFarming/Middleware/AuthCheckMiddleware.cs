@@ -18,7 +18,7 @@ namespace DungeonFarming.Middleware
             String path = context.Request.Path;
             if (!(path.StartsWith("/Registe") || path.StartsWith("/Login")))
             {
-                // 토큰 검사 로직
+                //_gameSessionDb.GetUserInfoSession()
             }
             await _next(context);
             //응답 로직

@@ -20,27 +20,43 @@ namespace DungeonFarming.Controllers
         }
         // POST: api/Login
         [HttpPost]
-        public async Task<LoginResData> Post(LoginReqBodyData body)
+        public async Task<LoginResponse> Login(LoginRequest request)
         {
-            LoginResData loginResData = new LoginResData();
-            (ErrorCode, AccountDbModel?) rt = await _accountDb.GetAccountInfo(body.user_id);
-            if (rt.Item1 != ErrorCode.ErrorNone)
+            LoginResponse response = new LoginResponse();
+            (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.user_id);
+            if (rt.errorCode != ErrorCode.None)
             {
-                loginResData.errorCode = rt.Item1;
-                return loginResData;
+                response.errorCode = rt.errorCode;
+                // Todo:logger
+                return response;
             }
-            String token = Security.GenerateToken();
-            loginResData.errorCode = await _gameSessionDb.setToken(new AuthCheckModel
+            if (rt.userAccountTuple == null)
             {
-                user_id = body.user_id,
+                response.errorCode = ErrorCode.ServerError;
+                // Todo:logger
+                return response;
+            }
+
+            if (Security.VerifyHashedPassword(request.password, rt.userAccountTuple.salt,
+                    rt.userAccountTuple.hashed_password) == false)
+            {
+                response.errorCode = ErrorCode.WorngPassword;
+                return response;
+            }
+
+            String token = Security.GenerateToken();
+            response.errorCode = await _gameSessionDb.SetUserInfoSession(new UserInfoSessionData
+            {
+                user_id = request.user_id,
                 token = token
             });
-            if (loginResData.errorCode != ErrorCode.ErrorNone)
+            if (response.errorCode != ErrorCode.None)
             {
                 // 토큰 입력 실패시 account db에서 유저 정보 삭제 하는 기능 필요할듯?
             }
-            loginResData.token = token;
-            return loginResData;
+            response.token = token;
+
+            return response;
         }
     }
 }

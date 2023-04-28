@@ -25,24 +25,25 @@ namespace DungeonFarming.Controllers
 
         // POST: DeleteAccount
         [HttpPost]
-        public async Task<DeleteAccountResData> Post(DeleteAccountBodyData body)
+        public async Task<DeleteAccountResponse> DeleteAccount(DeleteAccountRequest request)
         {
-            DeleteAccountResData deleteAccountResData = new DeleteAccountResData();
-            deleteAccountResData.errorCode = await _gameSessionDb.deleteToken(body.user_id);
-            if (deleteAccountResData.errorCode != ErrorCode.ErrorNone)
+            DeleteAccountResponse response = new DeleteAccountResponse();
+            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.user_id);
+            if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogError($"[DeleteAccount] Error : {body.user_id} - {deleteAccountResData.errorCode}");
-                return deleteAccountResData;
-            }
-            deleteAccountResData.errorCode = await _accountDb.DeleteAccount(body.user_id);
-            if (deleteAccountResData.errorCode != ErrorCode.ErrorNone)
-            {
-                _logger.ZLogError($"[DeleteAccount] Error : {body.user_id} - {deleteAccountResData.errorCode}");
-                return deleteAccountResData;
+                _logger.ZLogError($"[DeleteAccount] Error : {request.user_id} - {response.errorCode}");
+                return response;
             }
 
-            _logger.ZLogInformation($"[DeleteAccount] Info : {body.user_id} - DeleteAccount");
-            return deleteAccountResData;
+            response.errorCode = await _accountDb.DeleteAccount(request.user_id);
+            if (response.errorCode != ErrorCode.None)
+            {
+                _logger.ZLogError($"[DeleteAccount] Error : {request.user_id} - {response.errorCode}");
+                return response;
+            }
+
+            _logger.ZLogInformation($"[DeleteAccount] Info : {request.user_id} - DeleteAccount");
+            return response;
         }
     }
 }

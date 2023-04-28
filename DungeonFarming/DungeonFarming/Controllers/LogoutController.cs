@@ -21,20 +21,21 @@ namespace DungeonFarming.Controllers
 
         // POST: Logout
         [HttpPost]
-        public async Task<LogoutResData> Post(LogoutReqBodyData body)
+        public async Task<LogoutResponse> Logout(LogoutRequest request)
         {
-            LogoutResData logoutResData = new LogoutResData();
-            logoutResData.errorCode = await _gameSessionDb.deleteToken(body.user_id);
+            LogoutResponse response = new LogoutResponse();
+            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.user_id);
             // TODO: 게임 데이터 삭제하는 로직도 필요.
-            if (logoutResData.errorCode == ErrorCode.ErrorNone)
+            if (response.errorCode == ErrorCode.None)
             {
                 _logger.ZLogInformation($"[Logout] Info : body.user_id - Logout");
             }
             else
             {
-                _logger.ZLogError($"[Logout] Error : body.user_id - {logoutResData.errorCode}");
+                _logger.ZLogError($"[Logout] Error : body.user_id - {response.errorCode}");
             }
-            return logoutResData;
+
+            return response;
         }
 
     }
