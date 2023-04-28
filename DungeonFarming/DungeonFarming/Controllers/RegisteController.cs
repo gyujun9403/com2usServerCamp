@@ -23,29 +23,27 @@ namespace DungeonFarming.Controllers
         }
 
         [HttpPost()]
-        public async Task<RegisterResData> Registration(RegisteReqBodyData bodyData)
+        public async Task<RegisterResponse> Registration(RegisteRequest request)
         {
-            RegisterResData registerResData = new RegisterResData();
-            byte[] saltBytes, hashedPasswordBytes;
-            (byte[], byte[]) rt = Security.Hashing(bodyData.password);
-            saltBytes = rt.Item1;
-            hashedPasswordBytes = rt.Item2;
-            registerResData.errorCode = await _accountDb.RegisteUser(new AccountDbModel
+            RegisterResponse response = new RegisterResponse();
+            (byte[] saltBytes, byte[] hashedPasswordBytes) rt = Security.GetSaltAndHashedPassword(request.password);
+            response.errorCode = await _accountDb.RegisteUser(new UserAccountsTuple
             {
                 pk_id = null,
-                user_id = bodyData.user_id,
-                salt = saltBytes,
-                hashed_password = hashedPasswordBytes
+                user_id = request.user_id,
+                salt = rt.saltBytes,
+                hashed_password = rt.hashedPasswordBytes
             });
-            if (registerResData.errorCode == ErrorCode.ErrorNone)
+            if (response.errorCode == ErrorCode.None)
             {
-                _logger.ZLogInformation($"[Registration] Info : {bodyData.user_id} - Regist");
+                _logger.ZLogInformation($"[Registration] Info : {request.user_id} - Regist");
             }
             else
             {
-                _logger.ZLogError($"[Registration] Error : {bodyData.user_id} - {registerResData.errorCode}");
+                _logger.ZLogError($"[Registration] Error : {request.user_id} - {response.errorCode}");
             }
-            return registerResData;
+
+            return response;
         }
     }
 }

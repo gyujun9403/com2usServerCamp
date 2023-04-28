@@ -6,8 +6,8 @@ namespace DungeonFarming
 {
     public static class Security
     {
-        static readonly Int16 RepeatCnt = 10000;
-        public static (byte[], byte[]) Hashing(String rawPassword)
+        static readonly Int16 RepeatCnt = 4357;
+        public static (byte[], byte[]) GetSaltAndHashedPassword(String rawPassword)
         {
             byte[] saltBytes = new byte[16];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())

@@ -3,9 +3,9 @@
     public interface IAccountDb
     {
         // 유저 등록
-        Task<ErrorCode> RegisteUser(AccountDbModel model);
+        Task<ErrorCode> RegisteUser(UserAccountsTuple model);
         // 유저 정보 찾아오기
-        Task<(ErrorCode, AccountDbModel?)> GetAccountInfo(String userId);
+        Task<(ErrorCode, UserAccountsTuple?)> GetAccountInfo(String userId);
 
         Task<ErrorCode> DeleteAccount(String userId);
     }

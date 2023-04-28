@@ -12,68 +12,79 @@ namespace DungeonFarming.DataBase.GameSessionDb
         ILogger<RedisGameSessionDb> _logger;
         public RedisGameSessionDb(IConfiguration config, ILogger<RedisGameSessionDb> logger)
         {
-            string _connectionString = config.GetConnectionString("Redis_GameSession");
+            var _connectionString = config.GetConnectionString("Redis_GameSession");
             _redisConfig = new CloudStructures.RedisConfig("test", _connectionString);
             _redisConnection = new RedisConnection(_redisConfig);
             _logger = logger;
         }
 
-        public async Task<ErrorCode> deleteToken(string userId)
+        String GenerateUserInfoSessionKey(String userId)
+        {
+            return "userInfo:" + userId;
+        }
+
+        public async Task<ErrorCode> DeleteUserInfoSession(String userId)
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + userId, null);
-                CloudStructures.RedisResult<string> result = await redisString.GetAndDeleteAsync();
+                var keyString = GenerateUserInfoSessionKey(userId);
+                var redisString = new RedisString<String>(_redisConnection, keyString, null);
+                var result = await redisString.GetAndDeleteAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogError($"[deleteToken] Error : {userId}, Invalid Id");
+                    _logger.ZLogError($"[delete UserInfo Session] Error : {userId}, Invalid Id");
                     return ErrorCode.InvalidToken;
                 }
-                _logger.ZLogInformation($"[deleteToken] Info : {userId}");
-                return ErrorCode.ErrorNone;
+                _logger.ZLogInformation($"[delete UserInfo Session] Info : {userId}");
+
+                return ErrorCode.None;
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[deleteToken] Error : {userId} {ex.Message}");
+                _logger.ZLogError($"[delete UserInfo Session] Error : {userId} {ex.Message}");
                 return ErrorCode.GameSessionDbError;
             }
         }
 
-        public async Task<(ErrorCode, string?)> getToken(string userId)
+        public async Task<(ErrorCode, String?)> GetUserInfoSession(String userId)
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + userId, TimeSpan.FromHours(1));
-                CloudStructures.RedisResult<string> result = await redisString.GetAsync();
+                var keyString = GenerateUserInfoSessionKey(userId);
+                var redisString = new RedisString<String>(_redisConnection, keyString, TimeSpan.FromHours(1));
+                var result = await redisString.GetAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogError($"[getToken] Error : {userId}, Invalid Id");
+                    _logger.ZLogError($"[get UserInfo Session] Error : {userId}, Invalid Id");
                     return (ErrorCode.InvalidId, null);
                 }
-                _logger.ZLogInformation($"[setToken] Info : {userId}");
+                _logger.ZLogInformation($"[set UserInfo Session] Info : {userId}");
+
                 return (ErrorCode.InvalidId, result.Value);
             }
             catch(Exception ex)
             {
-                _logger.ZLogError($"[getToken] Error : {userId} {ex.Message}");
+                _logger.ZLogError($"[get UserInfo Session] Error : {userId} {ex.Message}");
                 return (ErrorCode.GameSessionDbError, null);
             }
         }
 
-        public async Task<ErrorCode> setToken(AuthCheckModel model)
+        public async Task<ErrorCode> SetUserInfoSession(UserInfoSessionData userInfo)
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + model.user_id, TimeSpan.FromHours(1));
-                await redisString.SetAsync(model.token, TimeSpan.FromHours(1));
-                _logger.ZLogInformation($"[setToken] Info : {model.user_id}");
+                var keyString = GenerateUserInfoSessionKey(userInfo.user_id);
+                // TODO: GameDB 정의 후 token이외에 필요한 정보 추가할 수 있게 UserInfoSessionData수정.
+                var redisString = new RedisString<String>(_redisConnection, keyString, TimeSpan.FromHours(1));
+                await redisString.SetAsync(userInfo.token, TimeSpan.FromHours(1));
+                _logger.ZLogInformation($"[set UserInfo Session] Info : {userInfo.user_id}");
+                return ErrorCode.None;
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[setToken] Error : {model.user_id} {ex.Message}");
+                _logger.ZLogError($"[set UserInfo Session] Error : {userInfo.user_id} {ex.Message}");
                 return ErrorCode.GameSessionDbError;
             }
-            return ErrorCode.ErrorNone;
         }
     }
 }
