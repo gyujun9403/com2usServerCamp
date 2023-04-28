@@ -28,6 +28,12 @@ namespace DungeonFarming.Controllers
         public async Task<DeleteAccountResData> Post(DeleteAccountBodyData body)
         {
             DeleteAccountResData deleteAccountResData = new DeleteAccountResData();
+            deleteAccountResData.errorCode = await _gameSessionDb.deleteToken(body.user_id);
+            if (deleteAccountResData.errorCode != ErrorCode.ErrorNone)
+            {
+                _logger.ZLogError($"[DeleteAccount] Error : {body.user_id} - {deleteAccountResData.errorCode}");
+                return deleteAccountResData;
+            }
             deleteAccountResData.errorCode = await _accountDb.DeleteAccount(body.user_id);
             if (deleteAccountResData.errorCode != ErrorCode.ErrorNone)
             {
@@ -35,12 +41,6 @@ namespace DungeonFarming.Controllers
                 return deleteAccountResData;
             }
 
-            deleteAccountResData.errorCode = await _gameSessionDb.deleteToken(body.user_id);
-            if (deleteAccountResData.errorCode != ErrorCode.ErrorNone)
-            {
-                _logger.ZLogError($"[DeleteAccount] Error : {body.user_id} - {deleteAccountResData.errorCode}");
-                return deleteAccountResData;
-            }
             _logger.ZLogInformation($"[DeleteAccount] Info : {body.user_id} - DeleteAccount");
             return deleteAccountResData;
         }

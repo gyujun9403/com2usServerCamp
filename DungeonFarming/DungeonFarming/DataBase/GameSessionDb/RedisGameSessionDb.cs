@@ -24,12 +24,11 @@ namespace DungeonFarming.DataBase.GameSessionDb
             {
                 RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + userId, null);
                 CloudStructures.RedisResult<string> result = await redisString.GetAndDeleteAsync();
-                // 일단 없는 토크인더라도 결론적으로는 없는 상태인게 맞으니, 에러는 던지지 않는다?
-                //if (result.HasValue == false)
-                //{
-                //    _logger.ZLogError($"[deleteToken] Error : {userId}, Invalid Id");
-                //    return ErrorCode.ErrorNone;
-                //}
+                if (result.HasValue == false)
+                {
+                    _logger.ZLogError($"[deleteToken] Error : {userId}, Invalid Id");
+                    return ErrorCode.InvalidToken;
+                }
                 _logger.ZLogInformation($"[deleteToken] Info : {userId}");
                 return ErrorCode.ErrorNone;
             }

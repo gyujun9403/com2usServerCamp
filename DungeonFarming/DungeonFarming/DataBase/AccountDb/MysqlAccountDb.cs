@@ -24,9 +24,14 @@ namespace DungeonFarming.DataBase.AccountDb
             try
             {
                 // 현재 없는 유저인경우, 예외를 던지지 않는다. 필요시 수정.
-                await _db.Query("account").Where("user_id", userId).DeleteAsync();
-                _logger.ZLogInformation($"[DeleteAccount] Info : {userId}");
-                return ErrorCode.ErrorNone;
+                if (await _db.Query("account").Where("user_id", userId).ExistsAsync())
+                {
+                    await _db.Query("account").Where("user_id", userId).DeleteAsync();
+                    _logger.ZLogInformation($"[DeleteAccount] Info : {userId}");
+                    return ErrorCode.ErrorNone;
+                }
+                _logger.ZLogError($"[DeleteAccount] Error : {userId} Invalid Id");
+                return ErrorCode.InvalidId;
             }
             catch(Exception ex)
             {
