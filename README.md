@@ -1,4 +1,4 @@
-# com2usServerCamp
+# com2usServerCamp 연규준
 컴투스 서버캠프 과제 - 던전파밍
 
 ## 과제 진행 방식
