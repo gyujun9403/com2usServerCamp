@@ -31,17 +31,17 @@ namespace DungeonFarming.Controllers
             registerResData.errorCode = await _accountDb.RegisteUser(new AccountDbModel
             {
                 pk_id = null,
-                account_id = bodyData.Account_id,
+                user_id = bodyData.user_id,
                 salt = saltBytes,
                 hashed_password = hashedPasswordBytes
             });
             if (registerResData.errorCode == ErrorCode.ErrorNone)
             {
-                _logger.ZLogInformation($"[Registration] Info : {bodyData.Account_id} - Regist");
+                _logger.ZLogInformation($"[Registration] Info : {bodyData.user_id} - Regist");
             }
             else
             {
-                _logger.ZLogError($"[Registration] Error : {bodyData.Account_id} - {registerResData.errorCode}");
+                _logger.ZLogError($"[Registration] Error : {bodyData.user_id} - {registerResData.errorCode}");
             }
             return registerResData;
         }

@@ -2,7 +2,7 @@
 {
     public class AuthBaseBodyData
     {
-        public string Account_id { get; set; }
+        public string user_id { get; set; }
         public string Password { get; set; }
     }
     public class RegisteReqBodyData : AuthBaseBodyData

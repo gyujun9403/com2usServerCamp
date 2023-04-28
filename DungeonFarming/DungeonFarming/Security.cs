@@ -26,9 +26,14 @@ namespace DungeonFarming
             return hashedPasswordBytes.SequenceEqual(newHashed);
         }
 
-        public static String GenerateToken(String account_id)
+        public static String GenerateToken()
         {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(account_id + DateTime.Now.ToString()));
+            byte[] tokenBytes = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(tokenBytes);
+            }
+            return Convert.ToBase64String(tokenBytes);
         }
     }
 }

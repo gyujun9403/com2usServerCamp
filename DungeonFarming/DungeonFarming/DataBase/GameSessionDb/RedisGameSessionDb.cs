@@ -10,7 +10,7 @@ namespace DungeonFarming.DataBase.GameSessionDb
         RedisConfig _redisConfig;
         RedisConnection _redisConnection;
         ILogger<RedisGameSessionDb> _logger;
-        RedisGameSessionDb(IConfiguration config, ILogger<RedisGameSessionDb> logger)
+        public RedisGameSessionDb(IConfiguration config, ILogger<RedisGameSessionDb> logger)
         {
             string _connectionString = config.GetConnectionString("Redis_GameSession");
             _redisConfig = new CloudStructures.RedisConfig("test", _connectionString);
@@ -42,13 +42,13 @@ namespace DungeonFarming.DataBase.GameSessionDb
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + model.account_id, TimeSpan.FromHours(1));
+                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + model.user_id, TimeSpan.FromHours(1));
                 await redisString.SetAsync(model.token, TimeSpan.FromHours(1));
-                _logger.ZLogInformation($"[setToken] Info : {model.account_id}");
+                _logger.ZLogInformation($"[setToken] Info : {model.user_id}");
             }
             catch (Exception e)
             {
-                _logger.ZLogError($"[setToken] Error : {model.account_id} Game Session Db Error");
+                _logger.ZLogError($"[setToken] Error : {model.user_id} Game Session Db Error");
                 return ErrorCode.GameSessionDbError;
             }
             return ErrorCode.ErrorNone;
