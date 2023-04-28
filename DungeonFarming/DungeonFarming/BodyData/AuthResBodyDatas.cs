@@ -13,4 +13,8 @@
     {
         public string token { get; set; }
     }
+
+    public class LogoutResData : BaseAuthResData
+    {
+    }
 }

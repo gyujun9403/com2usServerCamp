@@ -14,8 +14,8 @@ namespace DungeonFarming.Controllers
     [Route("[controller]")]
     public class RegisteController : ControllerBase
     {
-        IAccountDb _accountDb;
-        ILogger<RegisteController> _logger;
+        readonly IAccountDb _accountDb;
+        readonly ILogger<RegisteController> _logger;
         public RegisteController(IAccountDb accountDb, ILogger<RegisteController> logger)
         {
             _accountDb = accountDb;
@@ -27,7 +27,7 @@ namespace DungeonFarming.Controllers
         {
             RegisterResData registerResData = new RegisterResData();
             byte[] saltBytes, hashedPasswordBytes;
-            Security.Hashing(bodyData.Password, out saltBytes, out hashedPasswordBytes);
+            Security.Hashing(bodyData.password, out saltBytes, out hashedPasswordBytes);
             registerResData.errorCode = await _accountDb.RegisteUser(new AccountDbModel
             {
                 pk_id = null,

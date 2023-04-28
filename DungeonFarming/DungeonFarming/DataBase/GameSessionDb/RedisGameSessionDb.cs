@@ -17,13 +17,35 @@ namespace DungeonFarming.DataBase.GameSessionDb
             _redisConnection = new RedisConnection(_redisConfig);
             _logger = logger;
         }
+
+        public async Task<ErrorCode> deleteToken(string accountId)
+        {
+            try
+            {
+                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + accountId, null);
+                CloudStructures.RedisResult<string> result = await redisString.GetAndDeleteAsync();
+                if (result.HasValue == false)
+                {
+                    _logger.ZLogError($"[deleteToken] Error : {accountId}, Invalid Id");
+                    return ErrorCode.ErrorNone;
+                }
+                _logger.ZLogInformation($"[deleteToken] Info : {accountId}");
+                return ErrorCode.ErrorNone;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogError($"[deleteToken] Error : {accountId} {ex.Message}");
+                return ErrorCode.GameSessionDbError;
+            }
+        }
+
         public async Task<(ErrorCode, string?)> getToken(string accountId)
         {
             try
             {
                 RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + accountId, TimeSpan.FromHours(1));
                 CloudStructures.RedisResult<string> result = await redisString.GetAsync();
-                if (!result.HasValue)
+                if (result.HasValue == false)
                 {
                     _logger.ZLogError($"[getToken] Error : {accountId}, Invalid Id");
                     return (ErrorCode.InvalidId, null);
@@ -31,9 +53,9 @@ namespace DungeonFarming.DataBase.GameSessionDb
                 _logger.ZLogInformation($"[setToken] Info : {accountId}");
                 return (ErrorCode.InvalidId, result.Value);
             }
-            catch(Exception e)
+            catch(Exception ex)
             {
-                _logger.ZLogError($"[getToken] Error : {accountId} GameSession Db Error");
+                _logger.ZLogError($"[getToken] Error : {accountId} {ex.Message}");
                 return (ErrorCode.GameSessionDbError, null);
             }
         }
@@ -46,9 +68,9 @@ namespace DungeonFarming.DataBase.GameSessionDb
                 await redisString.SetAsync(model.token, TimeSpan.FromHours(1));
                 _logger.ZLogInformation($"[setToken] Info : {model.user_id}");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _logger.ZLogError($"[setToken] Error : {model.user_id} Game Session Db Error");
+                _logger.ZLogError($"[setToken] Error : {model.user_id} {ex.Message}");
                 return ErrorCode.GameSessionDbError;
             }
             return ErrorCode.ErrorNone;

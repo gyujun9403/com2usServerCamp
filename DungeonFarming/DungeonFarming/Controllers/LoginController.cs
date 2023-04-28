@@ -11,8 +11,8 @@ namespace DungeonFarming.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        IAccountDb _accountDb;
-        IGameSessionDb _gameSessionDb;
+        readonly IAccountDb _accountDb;
+        readonly IGameSessionDb _gameSessionDb;
         public LoginController(IGameSessionDb gameSessionDb, IAccountDb accountDb)
         {
             _accountDb = accountDb;
