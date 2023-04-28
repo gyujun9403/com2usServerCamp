@@ -9,4 +9,16 @@
     {
         
     }
+    public class LoginResData : BaseAuthResData
+    {
+        public string token { get; set; }
+    }
+
+    public class LogoutResData : BaseAuthResData
+    {
+    }
+
+    public class DeleteAccountResData : BaseAuthResData
+    {
+    }
 }

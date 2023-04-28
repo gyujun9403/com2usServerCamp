@@ -4,6 +4,7 @@ using DungeonFarming.DTOs;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using SqlKata.Execution;
+using ZLogger;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -13,10 +14,12 @@ namespace DungeonFarming.Controllers
     [Route("[controller]")]
     public class RegisteController : ControllerBase
     {
-        IAccountDb _accountDb;
-        public RegisteController(IAccountDb accountDb)
+        readonly IAccountDb _accountDb;
+        readonly ILogger<RegisteController> _logger;
+        public RegisteController(IAccountDb accountDb, ILogger<RegisteController> logger)
         {
             _accountDb = accountDb;
+            _logger = logger;
         }
 
         [HttpPost()]
@@ -24,27 +27,25 @@ namespace DungeonFarming.Controllers
         {
             RegisterResData registerResData = new RegisterResData();
             byte[] saltBytes, hashedPasswordBytes;
-            Security.Hashing(bodyData.Password, out saltBytes, out hashedPasswordBytes);
+            (byte[], byte[]) rt = Security.Hashing(bodyData.password);
+            saltBytes = rt.Item1;
+            hashedPasswordBytes = rt.Item2;
             registerResData.errorCode = await _accountDb.RegisteUser(new AccountDbModel
             {
                 pk_id = null,
-                account_id = bodyData.Account_id,
+                user_id = bodyData.user_id,
                 salt = saltBytes,
                 hashed_password = hashedPasswordBytes
             });
+            if (registerResData.errorCode == ErrorCode.ErrorNone)
+            {
+                _logger.ZLogInformation($"[Registration] Info : {bodyData.user_id} - Regist");
+            }
+            else
+            {
+                _logger.ZLogError($"[Registration] Error : {bodyData.user_id} - {registerResData.errorCode}");
+            }
             return registerResData;
         }
-
-        //[HttpPost("login")]
-        //public async Task<IActionResult> Login([FromBody] LoginDTO dto)
-        //{
-        //    return Ok();
-        //}
-
-        //[HttpDelete("delete")]
-        //public async Task<IActionResult> DeleteAccount([FromBody] DeleteAccountDTO dto)
-        //{
-        //    return Ok();
-        //}
     }
 }
