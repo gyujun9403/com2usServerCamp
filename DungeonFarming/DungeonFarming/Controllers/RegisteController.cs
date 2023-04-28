@@ -27,7 +27,9 @@ namespace DungeonFarming.Controllers
         {
             RegisterResData registerResData = new RegisterResData();
             byte[] saltBytes, hashedPasswordBytes;
-            Security.Hashing(bodyData.password, out saltBytes, out hashedPasswordBytes);
+            (byte[], byte[]) rt = Security.Hashing(bodyData.password);
+            saltBytes = rt.Item1;
+            hashedPasswordBytes = rt.Item2;
             registerResData.errorCode = await _accountDb.RegisteUser(new AccountDbModel
             {
                 pk_id = null,

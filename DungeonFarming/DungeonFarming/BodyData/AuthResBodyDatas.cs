@@ -17,4 +17,8 @@
     public class LogoutResData : BaseAuthResData
     {
     }
+
+    public class DeleteAccountResData : BaseAuthResData
+    {
+    }
 }

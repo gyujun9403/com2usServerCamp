@@ -18,44 +18,45 @@ namespace DungeonFarming.DataBase.GameSessionDb
             _logger = logger;
         }
 
-        public async Task<ErrorCode> deleteToken(string accountId)
+        public async Task<ErrorCode> deleteToken(string userId)
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + accountId, null);
+                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + userId, null);
                 CloudStructures.RedisResult<string> result = await redisString.GetAndDeleteAsync();
-                if (result.HasValue == false)
-                {
-                    _logger.ZLogError($"[deleteToken] Error : {accountId}, Invalid Id");
-                    return ErrorCode.ErrorNone;
-                }
-                _logger.ZLogInformation($"[deleteToken] Info : {accountId}");
+                // 일단 없는 토크인더라도 결론적으로는 없는 상태인게 맞으니, 에러는 던지지 않는다?
+                //if (result.HasValue == false)
+                //{
+                //    _logger.ZLogError($"[deleteToken] Error : {userId}, Invalid Id");
+                //    return ErrorCode.ErrorNone;
+                //}
+                _logger.ZLogInformation($"[deleteToken] Info : {userId}");
                 return ErrorCode.ErrorNone;
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[deleteToken] Error : {accountId} {ex.Message}");
+                _logger.ZLogError($"[deleteToken] Error : {userId} {ex.Message}");
                 return ErrorCode.GameSessionDbError;
             }
         }
 
-        public async Task<(ErrorCode, string?)> getToken(string accountId)
+        public async Task<(ErrorCode, string?)> getToken(string userId)
         {
             try
             {
-                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + accountId, TimeSpan.FromHours(1));
+                RedisString<string> redisString = new RedisString<string>(_redisConnection, "token:" + userId, TimeSpan.FromHours(1));
                 CloudStructures.RedisResult<string> result = await redisString.GetAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogError($"[getToken] Error : {accountId}, Invalid Id");
+                    _logger.ZLogError($"[getToken] Error : {userId}, Invalid Id");
                     return (ErrorCode.InvalidId, null);
                 }
-                _logger.ZLogInformation($"[setToken] Info : {accountId}");
+                _logger.ZLogInformation($"[setToken] Info : {userId}");
                 return (ErrorCode.InvalidId, result.Value);
             }
             catch(Exception ex)
             {
-                _logger.ZLogError($"[getToken] Error : {accountId} {ex.Message}");
+                _logger.ZLogError($"[getToken] Error : {userId} {ex.Message}");
                 return (ErrorCode.GameSessionDbError, null);
             }
         }
