@@ -13,16 +13,33 @@ namespace DungeonFarming.Controllers
     {
         readonly IAccountDb _accountDb;
         readonly IGameSessionDb _gameSessionDb;
-        public LoginController(IGameSessionDb gameSessionDb, IAccountDb accountDb)
+        readonly String _clientVersion;
+        readonly String _masterDataVersion;
+        public LoginController(IConfiguration config, IGameSessionDb gameSessionDb, IAccountDb accountDb)
         {
             _accountDb = accountDb;
             _gameSessionDb = gameSessionDb;
+            _clientVersion = config.GetSection("Versions")["Client"];
+            _masterDataVersion = config.GetSection("Versions")["Master_Data"];
         }
         // POST: api/Login
         [HttpPost]
         public async Task<LoginResponse> Login(LoginRequest request)
         {
             LoginResponse response = new LoginResponse();
+            // 버전 정보 확인
+            if (request.clientVersion != _clientVersion)
+            {
+                response.errorCode = ErrorCode.WorngClientVersion;
+                return response;
+            }
+            if (request.masterDataVersion != _masterDataVersion)
+            {
+                response.errorCode = ErrorCode.WorngMasterDataVersion;
+                return response;
+            }
+
+            // 계정 정보 가져오고 확인
             (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.user_id);
             if (rt.errorCode != ErrorCode.None)
             {
@@ -37,6 +54,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
 
+            // 비밀번호 확인
             if (Security.VerifyHashedPassword(request.password, rt.userAccountTuple.salt,
                     rt.userAccountTuple.hashed_password) == false)
             {
@@ -44,6 +62,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
 
+            // 토큰 가져오고 검증.
             String token = Security.GenerateToken();
             response.errorCode = await _gameSessionDb.SetUserInfoSession(new UserInfoSessionData
             {

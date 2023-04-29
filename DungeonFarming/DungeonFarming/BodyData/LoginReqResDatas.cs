@@ -2,10 +2,12 @@
 {
     public class LoginRequest : RequestBaseData
     {
-        public string password { get; set; }
+        public String password { get; set; }
+        public String clientVersion { get; set; }
+        public String masterDataVersion { get; set; }
     }
     public class LoginResponse : ResponseBaseData
     {
-        public string token { get; set; }
+        public String token { get; set; }
     }
 }
