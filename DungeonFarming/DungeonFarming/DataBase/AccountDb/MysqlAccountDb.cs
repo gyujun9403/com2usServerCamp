@@ -19,11 +19,21 @@ namespace DungeonFarming.DataBase.AccountDb
             _logger = logger;
         }
 
+        private ErrorCode MysqlExceptionHandle(String user_id, MySqlException ex)
+        {
+            if (ex.Number == 1062) //duplicated id exception
+            {
+                _logger.ZLogError($"[GetAccountInfo] Error : {user_id} duplicate key exception");
+                return ErrorCode.DuplicatedId;
+            }
+            _logger.ZLogError($"[GetAccountInfo] Error : {user_id} duplicate key exception");
+            return ErrorCode.AccountDbError;
+        }
+
         public async Task<ErrorCode> DeleteAccount(string userId)
         {
             try
             {
-                // 현재 없는 유저인경우, 예외를 던지지 않는다. 필요시 수정.
                 if (await _db.Query("user_accounts").Where("user_id", userId).ExistsAsync())
                 {
                     await _db.Query("user_accounts").Where("user_id", userId).DeleteAsync();
@@ -34,9 +44,12 @@ namespace DungeonFarming.DataBase.AccountDb
 
                 return ErrorCode.InvalidId;
             }
-            catch(Exception ex)
+            catch (MySqlException ex)
             {
-                // 없는 유저일 경우 ERROR_CODE.INVALID_ID를 던지게 추가
+                return MysqlExceptionHandle(userId, ex);
+            }
+            catch (Exception ex)
+            {
                 _logger.ZLogError($"[DeleteAccount] Error : {userId} {ex.Message}");
                 return ErrorCode.AccountDbError;
             }
@@ -59,14 +72,18 @@ namespace DungeonFarming.DataBase.AccountDb
 
                 return (ErrorCode.None, rt);
             }
-            catch(Exception ex)
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(userId, ex), null);
+            }
+            catch (Exception ex)
             {
                 _logger.ZLogError($"[GetAccountInfo] Error : {userId} {ex.Message}");
                 return (ErrorCode.AccountDbError, null);
             }
         }
 
-        public async Task<ErrorCode> RegisteUser(UserAccountsTuple model)
+        public async Task<(ErrorCode, Int16)> RegisteUser(UserAccountsTuple model)
         {
             try
             {
@@ -76,15 +93,20 @@ namespace DungeonFarming.DataBase.AccountDb
                     salt = model.salt,
                     hashed_password = model.hashed_password,
                 });
+                Int16 id = await _db.Query("user_accounts").Select("pk_id").Where("user_id", model.user_id).FirstOrDefaultAsync<Int16>();
                 _logger.ZLogInformation($"[GetAccountInfo] Info : {model.user_id}");
-                return ErrorCode.None;
+                return (ErrorCode.None, id);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(model.user_id, ex), -1);
             }
             catch (Exception ex)
             {
-                // 중복인경우 ERROR_CODE.DUPLICATED_ID를 던지게 추가
                 _logger.ZLogError($"[GetAccountInfo] Error : {model.user_id} {ex.Message}");
-                return ErrorCode.AccountDbError;
+                return (ErrorCode.AccountDbError, -1);
             }
+
         }
     }
 }
