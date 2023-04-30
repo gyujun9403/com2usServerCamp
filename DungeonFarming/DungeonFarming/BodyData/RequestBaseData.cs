@@ -2,7 +2,7 @@
 {
     public class RequestBaseData
     {
-        public string user_id { get; set; }
+        public string userId { get; set; }
     }
 
 
