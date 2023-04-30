@@ -40,7 +40,7 @@ namespace DungeonFarming.Controllers
             }
 
             // 계정 정보 가져오고 확인
-            (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.user_id);
+            (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.userId);
             if (rt.errorCode != ErrorCode.None)
             {
                 response.errorCode = rt.errorCode;
@@ -64,9 +64,9 @@ namespace DungeonFarming.Controllers
 
             // 토큰 가져오고 검증.
             String token = Security.GenerateToken();
-            response.errorCode = await _gameSessionDb.SetUserInfoSession(new UserInfoSessionData
+            response.errorCode = await _gameSessionDb.SetUserInfoSession(new GameSessionData
             {
-                user_id = request.user_id,
+                userId = request.userId,
                 token = token
             });
             if (response.errorCode != ErrorCode.None)

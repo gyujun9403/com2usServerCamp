@@ -24,7 +24,7 @@ namespace DungeonFarming.Controllers
         public async Task<LogoutResponse> Logout(LogoutRequest request)
         {
             LogoutResponse response = new LogoutResponse();
-            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.user_id);
+            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userId);
             // TODO: 게임 데이터 삭제하는 로직도 필요.
             if (response.errorCode == ErrorCode.None)
             {

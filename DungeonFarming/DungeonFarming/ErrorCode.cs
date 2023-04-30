@@ -7,6 +7,7 @@ public enum ErrorCode : Int16
     AccountDbError = 1,
     GameSessionDbError = 2,
     ServerError = 3,
+    InvalidBodyForm = 4,
 
     // Auth 10 ~ 99
     //  ID : 10 ~ 19, Token : 20 ~ 29, Password : 30 ~ 39

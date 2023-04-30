@@ -28,7 +28,7 @@ namespace DungeonFarming.DataBase.GameSessionDb
             try
             {
                 var keyString = GenerateUserInfoSessionKey(userId);
-                var redisString = new RedisString<String>(_redisConnection, keyString, null);
+                var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, null);
                 var result = await redisString.GetAndDeleteAsync();
                 if (result.HasValue == false)
                 {
@@ -46,12 +46,12 @@ namespace DungeonFarming.DataBase.GameSessionDb
             }
         }
 
-        public async Task<(ErrorCode, String?)> GetUserInfoSession(String userId)
+        public async Task<(ErrorCode, GameSessionData?)> GetUserInfoSession(String userId)
         {
             try
             {
                 var keyString = GenerateUserInfoSessionKey(userId);
-                var redisString = new RedisString<String>(_redisConnection, keyString, TimeSpan.FromHours(1));
+                var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
                 var result = await redisString.GetAsync();
                 if (result.HasValue == false)
                 {
@@ -60,7 +60,7 @@ namespace DungeonFarming.DataBase.GameSessionDb
                 }
                 _logger.ZLogInformation($"[set UserInfo Session] Info : {userId}");
 
-                return (ErrorCode.InvalidId, result.Value);
+                return (ErrorCode.None, result.Value);
             }
             catch(Exception ex)
             {
@@ -69,22 +69,28 @@ namespace DungeonFarming.DataBase.GameSessionDb
             }
         }
 
-        public async Task<ErrorCode> SetUserInfoSession(UserInfoSessionData userInfo)
+        public async Task<ErrorCode> SetUserInfoSession(GameSessionData userInfo)
         {
             try
             {
-                var keyString = GenerateUserInfoSessionKey(userInfo.user_id);
-                // TODO: GameDB 정의 후 token이외에 필요한 정보 추가할 수 있게 UserInfoSessionData수정.
-                var redisString = new RedisString<String>(_redisConnection, keyString, TimeSpan.FromHours(1));
-                await redisString.SetAsync(userInfo.token, TimeSpan.FromHours(1));
-                _logger.ZLogInformation($"[set UserInfo Session] Info : {userInfo.user_id}");
+                var keyString = GenerateUserInfoSessionKey(userInfo.userId);
+                var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
+                await redisString.SetAsync(userInfo, TimeSpan.FromHours(1));
+                _logger.ZLogInformation($"[set UserInfo Session] Info : {userInfo.userId}");
                 return ErrorCode.None;
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[set UserInfo Session] Error : {userInfo.user_id} {ex.Message}");
+                _logger.ZLogError($"[set UserInfo Session] Error : {userInfo.userId} {ex.Message}");
                 return ErrorCode.GameSessionDbError;
             }
+        }
+
+        public async Task<string> GetNotice()
+        {
+            var redisString = new RedisString<String>(_redisConnection, "notice", null);
+            var result = await redisString.GetAsync();
+            return result.Value;
         }
     }
 }

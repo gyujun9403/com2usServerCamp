@@ -30,17 +30,17 @@ namespace DungeonFarming.Controllers
             response.errorCode = await _accountDb.RegisteUser(new UserAccountsTuple
             {
                 pk_id = null,
-                user_id = request.user_id,
+                user_id = request.userId,
                 salt = rt.saltBytes,
                 hashed_password = rt.hashedPasswordBytes
             });
             if (response.errorCode == ErrorCode.None)
             {
-                _logger.ZLogInformation($"[Registration] Info : {request.user_id} - Regist");
+                _logger.ZLogInformation($"[Registration] Info : {request.userId} - Regist");
             }
             else
             {
-                _logger.ZLogError($"[Registration] Error : {request.user_id} - {response.errorCode}");
+                _logger.ZLogError($"[Registration] Error : {request.userId} - {response.errorCode}");
             }
 
             return response;

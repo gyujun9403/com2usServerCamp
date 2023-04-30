@@ -28,21 +28,21 @@ namespace DungeonFarming.Controllers
         public async Task<DeleteAccountResponse> DeleteAccount(DeleteAccountRequest request)
         {
             DeleteAccountResponse response = new DeleteAccountResponse();
-            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.user_id);
+            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userId);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogError($"[DeleteAccount] Error : {request.user_id} - {response.errorCode}");
+                _logger.ZLogError($"[DeleteAccount] Error : {request.userId} - {response.errorCode}");
                 return response;
             }
 
-            response.errorCode = await _accountDb.DeleteAccount(request.user_id);
+            response.errorCode = await _accountDb.DeleteAccount(request.userId);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogError($"[DeleteAccount] Error : {request.user_id} - {response.errorCode}");
+                _logger.ZLogError($"[DeleteAccount] Error : {request.userId} - {response.errorCode}");
                 return response;
             }
 
-            _logger.ZLogInformation($"[DeleteAccount] Info : {request.user_id} - DeleteAccount");
+            _logger.ZLogInformation($"[DeleteAccount] Info : {request.userId} - DeleteAccount");
             return response;
         }
     }
