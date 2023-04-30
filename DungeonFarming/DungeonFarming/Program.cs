@@ -6,6 +6,7 @@ using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.Middleware;
 using ZLogger;
 using DungeonFarming.DataBase.GameSessionDb;
+using DungeonFarming.DataBase.GameDb;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Host.ConfigureLogging(logging =>
 builder.Services.AddLogging();
 builder.Services.AddControllers();
 builder.Services.AddTransient<IAccountDb, MysqlAccountDb>();
+builder.Services.AddTransient<IGameDb, MysqlGameDb>();
 builder.Services.AddSingleton<IGameSessionDb, RedisGameSessionDb>();
 var app = builder.Build();
 app.MapControllers();
