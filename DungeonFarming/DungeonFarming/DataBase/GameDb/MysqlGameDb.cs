@@ -66,19 +66,19 @@ namespace DungeonFarming.DataBase.GameDb
 
         private String makeInventoryInsertQuery(IItemList items)
         {
-            List<(Int16, Int64)> currentList = items.getCurrencyList();
-            List<(Int16, Int64)> itemList = items.getItemList();
+            List<ItemInfo> currentList = items.getCurrencyList();
+            List<ItemInfo> itemList = items.getItemList();
             String query = "UPDATE inventory SET ";
             for (int i = 0; i < currentList.Count; i++)
             {
-                query += "currency" + i + "_code = " + currentList[i].Item1.ToString() + ", " +
-                    "currency" + i + "_count = " + currentList[i].Item2.ToString() + ", ";
+                query += "currency" + i + "_code = " + currentList[i].itemId.ToString() + ", " +
+                    "currency" + i + "_count = " + currentList[i].itemNum.ToString() + ", ";
             }
 
             for (int i = 0; i < itemList.Count; i++)
             {
-                query += "item" + i + "_code = " + itemList[i].Item1.ToString() + ", " +
-                    "item" + i + "_count = " + itemList[i].Item2.ToString() + ", ";
+                query += "item" + i + "_code = " + itemList[i].itemId.ToString() + ", " +
+                    "item" + i + "_count = " + itemList[i].itemNum.ToString() + ", ";
             }
             return query.TrimEnd(new char[] { ',', ' ' });
         }
@@ -99,31 +99,47 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        public async Task<ErrorCode> UpdateUserConnectDate(string userId)
+        public async Task<ErrorCode> UpdateUserConnectDate(Int64 userId)
         {
             try 
             {
-                Int16 todayLogin = await _db.Query("game_user")
+                LoginLogForReword log = await _db.Query("game_user")
                     .Where("user_id", userId)
-                    .Select("today_login")
-                    .FirstOrDefaultAsync<Int16>();
-                if (todayLogin == 1)
+                    .Select("*")
+                    .FirstOrDefaultAsync<LoginLogForReword>();
+                if (log.today_login == 1)
                 {
                     return ErrorCode.None;
                 }
                 await _db.Query("game_user")
                     .Where("user_id", userId)
                     .UpdateAsync( new {
-                        today_login = 1,
+                        consecutive_login_count = log.consecutive_login_count + 1,
                         missed_login_count = 0,
-                        consecutive_login_count = 1
+                        today_login = 1
                     });
                 // TODO: Logger
                 return ErrorCode.GameDbError;
             }
             catch (MySqlException ex)
             {
-                return MysqlExceptionHandle(userId, ex);
+                return MysqlExceptionHandle(userId.ToString(), ex);
+            }
+        }
+
+        public async Task<(ErrorCode, Inventory?)> GetInventory(Int64 user_id)
+        {
+            try
+            {
+                Inventory rt = await _db.Query("inventory")
+                    .Select("*").Where("user_id", user_id)
+                    .FirstOrDefaultAsync<Inventory>();
+                // TODO: Logger
+                return (ErrorCode.None, rt);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(user_id.ToString(), ex), null);
             }
         }
     }

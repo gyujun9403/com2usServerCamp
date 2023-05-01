@@ -1,8 +1,4 @@
-﻿using CloudStructures.Structures;
-using CloudStructures;
-using DungeonFarming.BodyData;
-using DungeonFarming.DataBase.GameSessionDb;
-using Microsoft.AspNetCore.Http;
+﻿using DungeonFarming.DataBase.GameSessionDb;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DungeonFarming.Controllers
@@ -23,7 +19,6 @@ namespace DungeonFarming.Controllers
         [HttpPost]
         public async Task<NoticeResponse> Notice(NoticeRequest request)
         {
-            //_gameSessionDb.
             NoticeResponse response = new NoticeResponse();
             response.notice = await _gameSessionDb.GetNotice();
             return response;

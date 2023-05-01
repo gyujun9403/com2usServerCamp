@@ -1,7 +1,5 @@
-﻿namespace DungeonFarming.BodyData
+﻿
+public class ResponseBaseData
 {
-    public class ResponseBaseData
-    {
-        public ErrorCode errorCode { get; set; }
-    }
+    public ErrorCode errorCode { get; set; }
 }
