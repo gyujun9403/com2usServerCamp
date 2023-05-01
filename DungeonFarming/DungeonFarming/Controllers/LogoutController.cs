@@ -1,7 +1,4 @@
-﻿using DungeonFarming.BodyData;
-using DungeonFarming.DataBase.GameSessionDb;
-using DungeonFarming.DTOs;
-using Microsoft.AspNetCore.Http;
+﻿using DungeonFarming.DataBase.GameSessionDb;
 using Microsoft.AspNetCore.Mvc;
 using ZLogger;
 
@@ -19,13 +16,11 @@ namespace DungeonFarming.Controllers
             _logger = logger;
         }
 
-        // POST: Logout
         [HttpPost]
         public async Task<LogoutResponse> Logout(LogoutRequest request)
         {
             LogoutResponse response = new LogoutResponse();
             response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userId);
-            // TODO: 게임 데이터 삭제하는 로직도 필요.
             if (response.errorCode == ErrorCode.None)
             {
                 _logger.ZLogInformation($"[Logout] Info : body.user_id - Logout");

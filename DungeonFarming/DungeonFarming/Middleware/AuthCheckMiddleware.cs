@@ -80,7 +80,7 @@ namespace DungeonFarming.Middleware
         private async Task<bool> CheckToken(HttpContext context, String userId, String inputToken)
         {
             var (errorCode, userInfo) = await _gameSessionDb.GetUserInfoSession(userId);
-            if (errorCode != ErrorCode.None)
+            if (errorCode != ErrorCode.None || userInfo == null)
             {
                 await SetContext(context, 400, errorCode);
                 return false;

@@ -1,9 +1,4 @@
-﻿namespace DungeonFarming.BodyData
+﻿public class RequestBaseData
 {
-    public class RequestBaseData
-    {
-        public string userId { get; set; }
-    }
-
-
+    public string userId { get; set; }
 }

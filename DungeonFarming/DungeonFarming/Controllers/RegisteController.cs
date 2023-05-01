@@ -1,7 +1,5 @@
-﻿using DungeonFarming.BodyData;
-using DungeonFarming.DataBase.AccountDb;
+﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb;
-using DungeonFarming.DTOs;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using SqlKata.Execution;

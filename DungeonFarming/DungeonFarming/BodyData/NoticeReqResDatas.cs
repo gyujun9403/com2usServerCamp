@@ -1,12 +1,9 @@
-﻿namespace DungeonFarming.BodyData
+﻿public class NoticeRequest : RequestBaseData
 {
-    public class NoticeRequest : RequestBaseData
-    {
-        public string token { get; set; }
-    }
+    public string token { get; set; }
+}
 
-    public class NoticeResponse : ResponseBaseData
-    {
-        public String notice { get; set; }
-    }
+public class NoticeResponse : ResponseBaseData
+{
+    public String notice { get; set; }
 }

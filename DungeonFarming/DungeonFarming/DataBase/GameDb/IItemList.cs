@@ -1,8 +1,12 @@
-﻿namespace DungeonFarming.DataBase.GameDb
+﻿
+public class ItemInfo
 {
-    public interface IItemList
-    {
-        public List<(Int16, Int64)> getCurrencyList();
-        public List<(Int16, Int64)> getItemList();
-    }
+    public Int16 itemId { get; set; }
+    public Int64 itemNum { get; set; }
+}
+
+public interface IItemList
+{
+    public List<ItemInfo> getCurrencyList();
+    public List<ItemInfo> getItemList();
 }
