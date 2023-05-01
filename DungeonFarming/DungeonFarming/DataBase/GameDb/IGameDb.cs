@@ -11,6 +11,8 @@
         // 유저의 인벤토리에 기본 지급 아이템들을 지급
         Task<ErrorCode> SetItemListInUserInventory(Int64 userId, IItemList items);
 
-        Task<(ErrorCode, Inventory?)> GetInventory(Int64 user_id);
+        Task<(ErrorCode, Inventory?)> GetInventory(Int64 userId);
+
+        Task<(ErrorCode, List<MailData>?)> GetMails(Int64 userId, Int32 startIndex, Int32 mailCount);
     }
 }

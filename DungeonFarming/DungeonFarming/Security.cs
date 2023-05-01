@@ -34,7 +34,8 @@ namespace DungeonFarming
             {
                 rng.GetBytes(tokenBytes);
             }
-            return Convert.ToBase64String(tokenBytes);
+            return Convert.ToBase64String(tokenBytes)
+                .Replace("+", "").Replace("/", ""); 
         }
     }
 }
