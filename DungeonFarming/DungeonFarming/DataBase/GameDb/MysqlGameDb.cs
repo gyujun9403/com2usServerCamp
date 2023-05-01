@@ -1,9 +1,11 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
+using Microsoft.Extensions.Hosting;
 using MySqlConnector;
 using SqlKata;
 using SqlKata.Compilers;
 using SqlKata.Execution;
 using System.Collections.Generic;
+using System.Linq;
 using ZLogger;
 
 namespace DungeonFarming.DataBase.GameDb
@@ -127,19 +129,46 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        public async Task<(ErrorCode, Inventory?)> GetInventory(Int64 user_id)
+        public async Task<(ErrorCode, Inventory?)> GetInventory(Int64 userId)
         {
             try
             {
                 Inventory rt = await _db.Query("inventory")
-                    .Select("*").Where("user_id", user_id)
+                    .Select("*").Where("user_id", userId)
                     .FirstOrDefaultAsync<Inventory>();
                 // TODO: Logger
                 return (ErrorCode.None, rt);
             }
             catch (MySqlException ex)
             {
-                return (MysqlExceptionHandle(user_id.ToString(), ex), null);
+                return (MysqlExceptionHandle(userId.ToString(), ex), null);
+            }
+        }
+
+        public async Task<(ErrorCode, List<MailData>?)> GetMails(Int64 userId, Int32 startIndex, Int32 mailCount)
+        {
+            try
+            {
+                IEnumerable<Mail> mails = await _db.Query("mailbox")
+                    .Select("*").Where("user_id", userId)
+                    .Limit(mailCount).Offset(startIndex).OrderBy("mail_id")
+                    .GetAsync<Mail>();
+                if (mails != null)
+                {
+                    List<MailData> mailDatas = new List<MailData>();
+                    foreach (Mail mail in mails)
+                    {
+                        mailDatas.Add(mail.getMailData());
+                    }
+                    // TODO: Logger
+                    return (ErrorCode.None, mailDatas);
+                }
+                // TODO: Logger
+                return (ErrorCode.None, null);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(userId.ToString(), ex), null);
             }
         }
     }

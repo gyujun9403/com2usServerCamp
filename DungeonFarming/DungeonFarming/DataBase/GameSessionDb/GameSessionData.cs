@@ -8,6 +8,8 @@
     public class GameSessionData
     {
         public String userId { get; set; }
+
+        public Int64 pkId { get; set; }
         public String token { get; set; }
         //
         public UserStatus userStatus { get; set; }

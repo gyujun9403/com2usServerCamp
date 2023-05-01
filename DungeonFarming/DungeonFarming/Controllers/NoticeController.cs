@@ -7,9 +7,10 @@ namespace DungeonFarming.Controllers
     [ApiController]
     public class NoticeController : ControllerBase
     {
-        private IGameSessionDb _gameSessionDb;
-        private ILogger<NoticeController> _logger;
+        private readonly IGameSessionDb _gameSessionDb;
+        private readonly ILogger<NoticeController> _logger;
         
+
         public NoticeController(IGameSessionDb gameSessionDb, ILogger<NoticeController> logger)
         {
             _gameSessionDb = gameSessionDb;
