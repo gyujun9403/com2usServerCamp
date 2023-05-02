@@ -1,6 +1,5 @@
 ﻿public class MailRequest : RequestBaseData
 {
-    public String token { get; set; }
     public Int16 page { get; set; }
 }
 

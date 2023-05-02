@@ -21,7 +21,7 @@ namespace DungeonFarming.Controllers
             _logger = logger;
             _gameDb = gameDb;
             _gameSessionDb = gameSessionDb;
-            _mailsPerPage = config.GetSection("GameConfigs").GetValue<short>("Mails_per_Page");
+            _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
         }
 
         [HttpPost]
@@ -35,7 +35,6 @@ namespace DungeonFarming.Controllers
                 response.errorCode = ErrorCode.GameDbError;
                 return response;
             }
-            // TODO: 우편개수 별도로 define하기.
             var (errorCodeGame, mailDatas) = await _gameDb.GetMails(sessionData.pkId, request.page * _mailsPerPage, _mailsPerPage);
             if (errorCodeGame != ErrorCode.None || mailDatas == null)
             {
