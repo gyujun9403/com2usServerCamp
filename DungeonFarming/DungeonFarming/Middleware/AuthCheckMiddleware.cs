@@ -100,5 +100,7 @@ namespace DungeonFarming.Middleware
             var responseContent = new { error_code = errorCode };
             await context.Response.WriteAsJsonAsync(responseContent);
         }
+
+
     }
 }

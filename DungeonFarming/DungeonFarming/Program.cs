@@ -26,6 +26,7 @@ builder.Services.AddTransient<IGameDb, MysqlGameDb>();
 builder.Services.AddSingleton<IGameSessionDb, RedisGameSessionDb>();
 var app = builder.Build();
 app.MapControllers();
+app.UseMiddleware<VersionCheckMiddleware>();
 app.UseMiddleware<AuthCheckMiddleware>();
 
 app.Run();

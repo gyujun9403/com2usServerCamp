@@ -1,6 +1,7 @@
-﻿public class RegisteRequest : RequestBaseData
+﻿public class RegisteRequest
 {
-    public string password { get; set; }
+    public String userId { get; set; }
+    public String password { get; set; }
 }
 public class RegisterResponse : ResponseBaseData
 {

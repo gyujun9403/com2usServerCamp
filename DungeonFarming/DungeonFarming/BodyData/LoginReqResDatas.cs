@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-public class LoginRequest : RequestBaseData
+public class LoginRequest
 {
+    public String userId { get; set; }
     public String password { get; set; }
     public String clientVersion { get; set; }
     public String masterDataVersion { get; set; }

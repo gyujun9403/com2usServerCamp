@@ -28,17 +28,6 @@ namespace DungeonFarming.Controllers
         public async Task<LoginResponse> Login(LoginRequest request)
         {
             LoginResponse response = new LoginResponse();
-            // 버전 정보 확인
-            if (request.clientVersion != _clientVersion)
-            {
-                response.errorCode = ErrorCode.WorngClientVersion;
-                return response;
-            }
-            if (request.masterDataVersion != _masterDataVersion)
-            {
-                response.errorCode = ErrorCode.WorngMasterDataVersion;
-                return response;
-            }
 
             // 계정 정보 가져오고 확인
             (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.userId);

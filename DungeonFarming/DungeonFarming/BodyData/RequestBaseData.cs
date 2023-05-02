@@ -1,4 +1,7 @@
 ﻿public class RequestBaseData
 {
-    public string userId { get; set; }
+    public String userId { get; set; }
+    public String token { get; set; }
+    public String clientVersion { get; set; }
+    public String masterDataVersion { get; set; }
 }
