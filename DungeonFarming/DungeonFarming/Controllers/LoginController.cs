@@ -1,5 +1,6 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb;
+using DungeonFarming.DataBase.GameDb.GameUserDataORM;
 using DungeonFarming.DataBase.GameSessionDb;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,7 @@ namespace DungeonFarming.Controllers
         readonly IAccountDb _accountDb;
         readonly IGameSessionDb _gameSessionDb;
         readonly IGameDb _gameDb;
+        readonly IMasterDataOffer _masterDataOffer;
         readonly String _clientVersion;
         readonly String _masterDataVersion;
         public LoginController(IConfiguration config, IGameSessionDb gameSessionDb, IGameDb gameDb, IAccountDb accountDb)
@@ -83,23 +85,17 @@ namespace DungeonFarming.Controllers
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
-            // 2. 유저 인벤토리에서 정보를 가져옴
-            var (errorCode, inven) = await _gameDb.GetInventory(rt.userAccountTuple.pk_id.Value);
-            if (errorCode != ErrorCode.None || inven == null)
+            // 2. 유저 장비 정보를 가져옴
+            var (errorCode, userItems) = await _gameDb.GetUserItemList(rt.userAccountTuple.pk_id.Value);
+            if (errorCode != ErrorCode.None)
             {
-                // TODO: logger
+                // TOOD : log
                 response.errorCode = ErrorCode.ServerError;
-                return response;
             }
+            response.userItems = userItems;
+ 
             // 3. 유저의 인벤토리 정보를 전송.
-            foreach (var currency in inven.getCurrencyList()) // TODO: 이 부분 질문. 임시객체가 만들어져서 성능상 괜찮은지.
-            {
-                response.currencys.Add(currency);
-            }
-            foreach (var item in inven.getItemList())
-            {
-                response.items.Add(item);
-            }
+            //            List<UserItem> userItems
             return response;
         }
     }

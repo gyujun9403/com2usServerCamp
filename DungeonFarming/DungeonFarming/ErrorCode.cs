@@ -22,4 +22,7 @@ public enum ErrorCode : Int16
     WorngClientVersion = 40,
     WorngMasterDataVersion = 41,
 
+    // MAIL : 50 ~ 99
+    InvalidMailId = 50,
+    InvalidMailPage = 51,
 }

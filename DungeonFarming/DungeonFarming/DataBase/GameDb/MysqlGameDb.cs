@@ -1,9 +1,13 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
+using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameDb.MasterData;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using MySqlConnector;
 using SqlKata;
 using SqlKata.Compilers;
 using SqlKata.Execution;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ZLogger;
@@ -12,15 +16,17 @@ namespace DungeonFarming.DataBase.GameDb
 {
     public class MysqlGameDb : IGameDb
     {
-        private ILogger<MysqlAccountDb> _logger;
+        IMasterDataOffer _masterDataOffer;
+        ILogger<MysqlAccountDb> _logger;
         QueryFactory _db;
-        public MysqlGameDb(IConfiguration config, ILogger<MysqlAccountDb> logger)
+        public MysqlGameDb(IConfiguration config, IMasterDataOffer masterDataOffer, ILogger<MysqlAccountDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Game");
             var connection = new MySqlConnection(connString);
             var compiler = new MySqlCompiler();
             _db = new QueryFactory(connection, compiler);
             _logger = logger;
+            _masterDataOffer = masterDataOffer;
         }
 
         private ErrorCode MysqlExceptionHandle(String configString, MySqlException ex)
@@ -35,15 +41,65 @@ namespace DungeonFarming.DataBase.GameDb
             return ErrorCode.AccountDbError;
         }
 
-        public async Task<(ErrorCode, DefaultItemList?)> GetDefaultItemList(Int16 listId)
+        public List<ItemBundle>? GetItemsFromDefaultItem(DefaultItems defaultItems)
+        {
+            List<ItemBundle> rt = new List<ItemBundle>();
+            if (defaultItems.item0_code != -1 && defaultItems.item0_count != -1)
+            {
+                rt.Add(new ItemBundle {
+                    itemCode = defaultItems.item0_code,
+                    itemCount = defaultItems.item0_count
+                });
+            }
+            if (defaultItems.item1_code != -1 && defaultItems.item1_count != -1)
+            {
+                rt.Add(new ItemBundle
+                {
+                    itemCode = defaultItems.item1_code,
+                    itemCount = defaultItems.item1_count
+                });
+            }
+            if (defaultItems.item2_code != -1 && defaultItems.item2_count != -1)
+            {
+                rt.Add(new ItemBundle
+                {
+                    itemCode = defaultItems.item2_code,
+                    itemCount = defaultItems.item2_count
+                });
+            }
+            if (defaultItems.item3_code != -1 && defaultItems.item3_count != -1)
+            {
+                rt.Add(new ItemBundle
+                {
+                    itemCode = defaultItems.item3_code,
+                    itemCount = defaultItems.item3_count
+                });
+            }
+            if (rt.Count == 0)
+            {
+                return null;
+            }
+            return rt;
+        }
+
+        public async Task<(ErrorCode, List<ItemBundle>?)> GetDefaultItemBundle(Int16 listId)
         {
             try
             {
-                DefaultItemList rt = await _db.Query("default_item_list")
+                DefaultItems? rt = await _db.Query("mt_default_items_list")
                     .Select("*").Where("list_id", listId)
-                    .FirstOrDefaultAsync<DefaultItemList>();
+                    .FirstOrDefaultAsync<DefaultItems>();
+                if (rt == null)
+                {
+                    return (ErrorCode.GameDbError, null);
+                }
+                List<ItemBundle>? itemBundles = GetItemsFromDefaultItem(rt);
+                if (itemBundles == null)
+                {
+                    return (ErrorCode.GameDbError, null);
+                }
                 // TODO: Logger
-                return (ErrorCode.None, rt);
+                return (ErrorCode.None, itemBundles);
             }
             catch (MySqlException ex)
             {
@@ -55,8 +111,7 @@ namespace DungeonFarming.DataBase.GameDb
         {
             try
             {
-                await _db.Query("game_user").InsertAsync( new { user_id = userId } );
-                await _db.Query("inventory").InsertAsync( new { user_id = userId } );
+                await _db.Query("game_user").InsertAsync(new { user_id = userId });
                 // TODO: Logger
                 return ErrorCode.None;
             }
@@ -66,33 +121,37 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        private String makeInventoryInsertQuery(IItemList items)
+        public String? generateItemsInsertQuery(Int64 userId, List<ItemBundle> itemBundles)
         {
-            List<ItemInfo> currentList = items.getCurrencyList();
-            List<ItemInfo> itemList = items.getItemList();
-            String query = "UPDATE inventory SET ";
-            for (int i = 0; i < currentList.Count; i++)
+            String query = "INSERT INTO user_items (user_id, item_code, item_count, attack, defence, magic, enhance_count) VALUES ";
+            foreach (ItemBundle itemBundle in itemBundles)
             {
-                query += "currency" + i + "_code = " + currentList[i].itemId.ToString() + ", " +
-                    "currency" + i + "_count = " + currentList[i].itemNum.ToString() + ", ";
-            }
-
-            for (int i = 0; i < itemList.Count; i++)
-            {
-                query += "item" + i + "_code = " + itemList[i].itemId.ToString() + ", " +
-                    "item" + i + "_count = " + itemList[i].itemNum.ToString() + ", ";
+                var itemDefine = _masterDataOffer.getItemDefine(itemBundle.itemCode);
+                if (itemDefine == null)
+                {
+                    return null;
+                }
+                query += "(" + userId.ToString() + ", " +
+                    itemBundle.itemCode.ToString() + ", " +
+                    itemBundle.itemCount.ToString() + ", " +
+                    itemDefine.attack.ToString() + ", " +
+                    itemDefine.defence.ToString() + ", " +
+                    itemDefine.magic.ToString() + ", " +
+                    "0), ";
             }
             return query.TrimEnd(new char[] { ',', ' ' });
         }
 
-        public async Task<ErrorCode> SetItemListInUserInventory(Int64 userId, IItemList items)
+        public async Task<ErrorCode> SetUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundles)
         {
-            
-            String query = makeInventoryInsertQuery(items) + " WHERE user_id=" + userId.ToString();
+            String? query = generateItemsInsertQuery(userId, itemBundles);
+            if (query == null)
+            {
+                return ErrorCode.GameDbError;
+            }
             try
             {
                 await _db.StatementAsync(query);
-                // TODO: Logger
                 return ErrorCode.None;
             }
             catch (MySqlException ex)
@@ -103,7 +162,7 @@ namespace DungeonFarming.DataBase.GameDb
 
         public async Task<ErrorCode> UpdateUserConnectDate(Int64 userId)
         {
-            try 
+            try
             {
                 LoginLogForReword log = await _db.Query("game_user")
                     .Where("user_id", userId)
@@ -113,15 +172,16 @@ namespace DungeonFarming.DataBase.GameDb
                 {
                     return ErrorCode.None;
                 }
+
                 await _db.Query("game_user")
                     .Where("user_id", userId)
-                    .UpdateAsync( new {
+                    .UpdateAsync(new {
                         consecutive_login_count = log.consecutive_login_count + 1,
                         missed_login_count = 0,
                         today_login = 1
                     });
                 // TODO: Logger
-                return ErrorCode.GameDbError;
+                return ErrorCode.None;
             }
             catch (MySqlException ex)
             {
@@ -129,15 +189,18 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        public async Task<(ErrorCode, Inventory?)> GetInventory(Int64 userId)
+        public async Task<(ErrorCode, List<UserItem>?)> GetUserItemList(Int64 userId)
         {
             try
             {
-                Inventory rt = await _db.Query("inventory")
-                    .Select("*").Where("user_id", userId)
-                    .FirstOrDefaultAsync<Inventory>();
-                // TODO: Logger
-                return (ErrorCode.None, rt);
+                List<UserItem> userItems = new List<UserItem>();
+                IEnumerable<UserItem> itemEnumList = await _db.Query("user_items")
+                    .Select("*").Where("user_id", userId).GetAsync<UserItem>();
+                foreach (UserItem item in itemEnumList)
+                {
+                    userItems.Add(item);
+                }
+                return (ErrorCode.None, userItems);
             }
             catch (MySqlException ex)
             {
@@ -145,31 +208,196 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        public async Task<(ErrorCode, List<MailData>?)> GetMails(Int64 userId, Int32 startIndex, Int32 mailCount)
+        public async Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount)
         {
+            IEnumerable<Mail> mails;
             try
             {
-                IEnumerable<Mail> mails = await _db.Query("mailbox")
-                    .Select("*").Where("user_id", userId)
-                    .Limit(mailCount).Offset(startIndex).OrderBy("mail_id")
+                mails = await _db.Query("mailbox")
+                    .Select("*")
+                    .Where("user_id", userId)
+                    .Where("is_deleted", 0)
+                    .Where(q =>
+                        q.Where("expiration_date", ">", DateTime.Now)
+                        .OrWhere("expiration_date", null)
+                    )
+                    .Limit(mailCount).Offset(startIndex).OrderBy("recieve_date")
                     .GetAsync<Mail>();
-                if (mails != null)
-                {
-                    List<MailData> mailDatas = new List<MailData>();
-                    foreach (Mail mail in mails)
-                    {
-                        mailDatas.Add(mail.getMailData());
-                    }
-                    // TODO: Logger
-                    return (ErrorCode.None, mailDatas);
-                }
-                // TODO: Logger
-                return (ErrorCode.None, null);
             }
             catch (MySqlException ex)
             {
                 return (MysqlExceptionHandle(userId.ToString(), ex), null);
             }
+            if (mails != null)
+            {
+                List<MailPreview> previews = new List<MailPreview>();
+                foreach (Mail mail in mails)
+                {
+                    previews.Add(new MailPreview {
+                        mail_id = mail.mail_id,
+                        item0_code = mail.item0_code,
+                        item0_count = mail.item0_count,
+                        mail_title = mail.mail_title,
+                        expiration_date = mail.expiration_date
+                    });
+                }
+                // TODO: Logger
+                return (ErrorCode.None, previews);
+            }
+            // TODO: Logger
+            return (ErrorCode.None, null);
+
         }
+        public async Task<(ErrorCode, Mail?)> GetMail(Int64 userId, Int64 mailId)
+        {
+            try
+            {
+                Mail? mail = await _db.Query("mailbox")
+                    .Select("*")
+                    .Where("mail_id", mailId)
+                    .Where("user_id", userId)
+                    .Where("is_deleted", 0)
+                    .Where( q => 
+                        q.Where("expiration_date", ">", DateTime.Now)
+                        .OrWhere("expiration_date", null)
+                    )
+                    .FirstOrDefaultAsync<Mail>();
+                if (mail == null)
+                {
+                    return (ErrorCode.InvalidMailId, null);
+                }
+                return (ErrorCode.None, mail);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(mailId.ToString(), ex), null);
+            }
+        }
+
+        private String? MailItemsQuery(Mail mail)
+        {
+            List<(ItemDefine, Int64)> itemDefines = new List<(ItemDefine, Int64)>();
+            ItemDefine? tempDefine = _masterDataOffer.getItemDefine(mail.item0_code);
+            if (tempDefine != null)
+            {
+                itemDefines.Add((tempDefine, mail.item0_count));
+            }
+            tempDefine = _masterDataOffer.getItemDefine(mail.item1_code);
+            if (tempDefine != null)
+            {
+                itemDefines.Add((tempDefine, mail.item1_count));
+            }
+            tempDefine = _masterDataOffer.getItemDefine(mail.item2_code);
+            if (tempDefine != null)
+            {
+                itemDefines.Add((tempDefine, mail.item2_count));
+            }
+            tempDefine = _masterDataOffer.getItemDefine(mail.item3_code);
+            if (tempDefine != null)
+            {
+                itemDefines.Add((tempDefine, mail.item3_count));
+            }
+            if (itemDefines.Count == 0)
+            {
+                return null;
+            }
+            String query = "INSERT INTO user_items VALUES ";
+            foreach (var itemDefine in itemDefines)
+            {
+                query += "(" + mail.user_id + ", "
+                    + itemDefine.Item1.item_code.ToString() + ", "
+                    + itemDefine.Item2.ToString() + ", "
+                    + itemDefine.Item1.attack.ToString() + ", "
+                    + itemDefine.Item1.defence.ToString() + ", "
+                    + itemDefine.Item1.magic.ToString() + ", "
+                    + "0 ), ";
+            }
+            return query.TrimEnd(new char[] { ',', ' ' });
+        }
+
+        private object getMailItemDefaultObj()
+        {
+            return new {
+                item0_code = -1,
+                item0_count = -1,
+                item1_code = -1,
+                item1_count = -1,
+                item2_code = -1,
+                item2_count = -1,
+                item3_code = -1,
+                item3_count = -1,
+            };
+        }
+
+        public async Task<ErrorCode> RecvMailItem(Int64 userId, Int64 mailId)
+        {
+            Mail? mail;
+            try
+            {
+                mail = await _db.Query("mailbox")
+                    .Select("*")
+                    .Where("mail_id", mailId)
+                    .Where("user_id", userId)
+                    .Where("is_deleted", 0)
+                    .Where(q =>
+                        q.Where("expiration_date", ">", DateTime.Now)
+                        .OrWhere("expiration_date", null)
+                    )
+                    .FirstOrDefaultAsync<Mail>();
+                if (mail == null)
+                {
+                    return ErrorCode.InvalidMailId;
+                }
+                await _db.Query("mailbox")
+                    .Where("mail_id", mailId)
+                    .Where("user_id", userId)
+                    .Where("is_deleted", 0)
+                    .Where("expiration_date", ">", DateTime.Now)
+                    .OrWhere("expiration_date", null)
+                    .UpdateAsync( getMailItemDefaultObj() );
+            }       
+            catch (MySqlException ex)
+            {
+                return MysqlExceptionHandle(mailId.ToString(), null);
+            }
+            var query = MailItemsQuery(mail);
+            if (query == null)
+            {
+                return ErrorCode.None;
+            }
+            try
+            {
+                await _db.StatementAsync(query);
+                return ErrorCode.None;
+            }
+            catch (MySqlException ex)
+            {
+                // TODO : 실패시 다시 우편함에 집어 넣기
+                return MysqlExceptionHandle(mailId.ToString(), null);
+            }
+        }
+
+        public async Task<ErrorCode> DeleteMail(Int64 userId, Int64 mailId)
+        {
+            try
+            {
+                await _db.Query("mailbox")
+                    .Where("mail_id", mailId)
+                    .Where("user_id", userId)
+                    .Where("is_deleted", 0)
+                    .Where(q =>
+                        q.Where("expiration_date", ">", DateTime.Now)
+                        .OrWhere("expiration_date", null)
+                    )
+                    .UpdateAsync(new { is_deleted = 1 });
+                return ErrorCode.None;
+            }
+            catch (MySqlException ex)
+            {
+                return MysqlExceptionHandle(mailId.ToString(), null);
+            }
+        }
+
+        
     }
 }
