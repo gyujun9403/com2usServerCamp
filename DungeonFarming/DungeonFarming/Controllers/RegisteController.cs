@@ -52,7 +52,7 @@ namespace DungeonFarming.Controllers
 
             // 1. 기본 지급 아이템 목록을 가져온다
             // TODO: 0을 상수화 해서 사용 -> config에서 읽어오게 한다던가..
-            var (ItemListErrorCode, itemList) = await _gameDb.GetDefaultItemList(0);
+            var (ItemListErrorCode, itemList) = await _gameDb.GetDefaultItemBundle(0);
             if (ItemListErrorCode != ErrorCode.None || itemList == null)
             {
                 _logger.ZLogError($"[Registration] Error : {request.userId} - GetDefaultItemList");
@@ -60,7 +60,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 2. 유저의 인벤토리에 기본 지급 아이템들을 지급한다.
-            if (await _gameDb.SetItemListInUserInventory(pkId, itemList) != ErrorCode.None)
+            if (await _gameDb.SetUserItemsByItemBundles(pkId, itemList) != ErrorCode.None)
             {
                 _logger.ZLogError($"[Registration] Error : {request.userId} - SetItemListInUserInventory");
                 response.errorCode = ErrorCode.ServerError;

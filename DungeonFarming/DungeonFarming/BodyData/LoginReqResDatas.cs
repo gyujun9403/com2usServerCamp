@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using System;
 using System.Collections.Generic;
 public class LoginRequest
 {
@@ -12,6 +13,5 @@ public class LoginRequest
 public class LoginResponse : ResponseBaseData
 {
     public String token { get; set; }
-    public List<ItemInfo> currencys { get; set; } = new();
-    public List<ItemInfo> items { get; set; } = new();
+    public List<UserItem> userItems { get; set; } = new();
 }

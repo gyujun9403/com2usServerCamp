@@ -76,7 +76,7 @@ namespace DungeonFarming.Middleware
             }
         }
 
-        private async Task SetContext(HttpContext context, int statusCode, ErrorCode errorCode)
+        private async Task SetContext(HttpContext context, Int32 statusCode, ErrorCode errorCode)
         {
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json";
