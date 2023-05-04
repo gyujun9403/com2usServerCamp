@@ -28,25 +28,21 @@ namespace DungeonFarming.Controllers
         public async Task<MailPreviewResponse> GetMailPreviet(MailPreviewRequest request)
         {
             MailPreviewResponse response = new MailPreviewResponse();
+            Int64 userPkId = -1;
+            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
+            {
+                if (long.TryParse(userPkIdStr, out userPkId) == false)
+                {
+                    response.errorCode = ErrorCode.GameDbError;
+                    return response;
+                }
+            }
             if (request.page < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailPage;
                 return response;
             }
-            var (errorCodeSession, sessionData) = await _gameSessionDb.GetUserInfoSession(request.userId);
-            if (errorCodeSession != ErrorCode.None)
-            {
-                // TODO : Logger
-                response.errorCode = errorCodeSession;
-                return response;
-            }
-            else if (sessionData == null)
-            {
-                // TODO : Logger
-                response.errorCode = ErrorCode.GameDbError;
-                return response;
-            }
-            var (errorCode, mailPreviewList) = await _gameDb.GetMailPreviewList(sessionData.pkId, request.page * _mailsPerPage, _mailsPerPage);
+            var (errorCode, mailPreviewList) = await _gameDb.GetMailPreviewList(userPkId, request.page * _mailsPerPage, _mailsPerPage);
             if (errorCode != ErrorCode.None)
             {
                 // TODO : Logger
@@ -68,26 +64,21 @@ namespace DungeonFarming.Controllers
         public async Task<GetMailResponse> GetMail(GetMailRequest request)
         {
             GetMailResponse response = new GetMailResponse();
+            Int64 userPkId = -1;
+            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
+            {
+                if (long.TryParse(userPkIdStr, out userPkId) == false)
+                {
+                    response.errorCode = ErrorCode.GameDbError;
+                    return response;
+                }
+            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
                 return response;
             }
-            var (errorCodeSession, sessionData) = await _gameSessionDb.GetUserInfoSession(request.userId);
-            if (errorCodeSession != ErrorCode.None)
-            {
-                // TODO : Logger
-                response.errorCode = errorCodeSession;
-                return response;
-            }
-            else if (sessionData == null)
-            {
-                // TODO : Logger
-                response.errorCode = ErrorCode.GameDbError;
-                return response;
-            }
-            // TODO : mailId가 유저의 메일인지 확인
-            (response.errorCode, response.mail) = await _gameDb.GetMail(sessionData.pkId, request.mailId);
+            (response.errorCode, response.mail) = await _gameDb.GetMail(userPkId, request.mailId);
             return response;
         }
 
@@ -95,25 +86,21 @@ namespace DungeonFarming.Controllers
         public async Task<RecvMailItemsResponse> RecvMailItems(RecvMailItemsRequest request)
         {
             RecvMailItemsResponse response = new RecvMailItemsResponse();
+            Int64 userPkId = -1;
+            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
+            {
+                if (long.TryParse(userPkIdStr, out userPkId) == false)
+                {
+                    response.errorCode = ErrorCode.GameDbError;
+                    return response;
+                }
+            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
                 return response;
             }
-            var (errorCodeSession, sessionData) = await _gameSessionDb.GetUserInfoSession(request.userId);
-            if (errorCodeSession != ErrorCode.None)
-            {
-                // TODO : Logger
-                response.errorCode = errorCodeSession;
-                return response;
-            }
-            else if (sessionData == null)
-            {
-                // TODO : Logger
-                response.errorCode = ErrorCode.GameDbError;
-                return response;
-            }
-            response.errorCode = await _gameDb.RecvMailItem(sessionData.pkId, request.mailId);
+            response.errorCode = await _gameDb.RecvMailItem(userPkId, request.mailId);
             return response;
         }
 
@@ -121,25 +108,21 @@ namespace DungeonFarming.Controllers
         public async Task<DeleteMailResponse> DeleteMail(DeleteMailRequest request)
         {
             DeleteMailResponse response = new DeleteMailResponse();
+            Int64 userPkId = -1;
+            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
+            {
+                if (long.TryParse(userPkIdStr, out userPkId) == false)
+                {
+                    response.errorCode = ErrorCode.GameDbError;
+                    return response;
+                }
+            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
                 return response;
             }
-            var (errorCodeSession, sessionData) = await _gameSessionDb.GetUserInfoSession(request.userId);
-            if (errorCodeSession != ErrorCode.None)
-            {
-                // TODO : Logger
-                response.errorCode = errorCodeSession;
-                return response;
-            }
-            else if (sessionData == null)
-            {
-                // TODO : Logger
-                response.errorCode = ErrorCode.GameDbError;
-                return response;
-            }
-            response.errorCode = await _gameDb.DeleteMail(sessionData.pkId, request.mailId);
+            response.errorCode = await _gameDb.DeleteMail(userPkId, request.mailId);
             return response;
         }
     }
