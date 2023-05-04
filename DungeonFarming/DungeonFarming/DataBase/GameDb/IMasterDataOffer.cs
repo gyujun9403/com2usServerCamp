@@ -6,6 +6,7 @@ namespace DungeonFarming.DataBase.GameDb
     {
         public bool LoadMasterDatas();
         public DailyLoginReward? getDailyLoginReward(Int32 dayCount);
+        public List<ItemBundle>? getDailyLoginRewardItemBundles(Int32 dayCount);
         public ItemAttrubute? getItemAttrubute(Int16 attribute);
         public List<PackageItem>? getPackage(Int16 packageCode);
         public DefaultItems? getDefaultItems(Int16 listCode);

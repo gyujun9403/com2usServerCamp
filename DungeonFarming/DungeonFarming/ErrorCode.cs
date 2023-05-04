@@ -13,9 +13,10 @@ public enum ErrorCode : Int16
     // Auth 10 ~ 99
     //  ID : 10 ~ 19, Token : 20 ~ 29, Password : 30 ~ 39
     //  Version : 40 ~ 49
-    InvalidIdFormat = 10,
-    DuplicatedId = 11,
-    InvalidId = 12,
+    AreadyLogin = 10,
+    InvalidIdFormat = 11,
+    DuplicatedId = 12,
+    InvalidId = 13,
     InvalidToken = 20,
     InvalidPasswordFormat = 30,
     WorngPassword = 31,
