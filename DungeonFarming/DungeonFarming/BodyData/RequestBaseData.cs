@@ -4,4 +4,5 @@
     public String token { get; set; }
     public String clientVersion { get; set; }
     public String masterDataVersion { get; set; }
+    //public String SessionToken { get; set; }
 }
