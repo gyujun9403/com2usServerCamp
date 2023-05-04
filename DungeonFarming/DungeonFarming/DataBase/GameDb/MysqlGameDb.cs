@@ -28,7 +28,6 @@ namespace DungeonFarming.DataBase.GameDb
             _logger = logger;
             _masterDataOffer = masterDataOffer;
         }
-
         private ErrorCode MysqlExceptionHandle(String configString, MySqlException ex)
         {
             if (ex.Number == 1062) //duplicated id exception
@@ -40,7 +39,6 @@ namespace DungeonFarming.DataBase.GameDb
             _logger.ZLogError($"[GetAccountInfo] Error : {configString} duplicate key exception");
             return ErrorCode.AccountDbError;
         }
-
         public List<ItemBundle>? GetItemsFromDefaultItem(DefaultItems defaultItems)
         {
             List<ItemBundle> rt = new List<ItemBundle>();
@@ -160,32 +158,70 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        public async Task<ErrorCode> UpdateUserConnectDate(Int64 userId)
+        private LoginLog GenerateLoginLog(LoginLog log)
         {
+            Int16 renewalLastLoginCount = log.consecutive_login_count;
+            // 어제 새벽 6시 이전이 마지막 로그인인 경우(출석 스택 초기화)
+            if (log.last_login_date < DateTime.Today.AddDays(-1).AddHours(6))
+            {
+                renewalLastLoginCount = 1;
+            }
+            else if (log.last_login_date < DateTime.Today.AddHours(6))
+            {
+                renewalLastLoginCount += 1;
+            }
+            return new LoginLog
+            {
+                user_id = log.user_id,
+                consecutive_login_count = renewalLastLoginCount,
+                last_login_date = DateTime.Now
+            };
+        }
+
+        // 로그인 갱신시에만 LoginLog를 던짐.
+        public async Task<(ErrorCode, LoginLog?)> UpdateAndGetLoginLog(Int64 userId)
+        {
+            LoginLog? renewalLoginLog = null;
             try
             {
-                LoginLogForReword log = await _db.Query("game_user")
+                LoginLog log = await _db.Query("login_log")
                     .Where("user_id", userId)
                     .Select("*")
-                    .FirstOrDefaultAsync<LoginLogForReword>();
-                if (log.today_login == 1)
-                {
-                    return ErrorCode.None;
-                }
-
-                await _db.Query("game_user")
+                    .FirstOrDefaultAsync<LoginLog>();
+                renewalLoginLog = GenerateLoginLog(log);
+                await _db.Query("login_log")
                     .Where("user_id", userId)
-                    .UpdateAsync(new {
-                        consecutive_login_count = log.consecutive_login_count + 1,
-                        missed_login_count = 0,
-                        today_login = 1
-                    });
+                    .UpdateAsync(renewalLoginLog);
                 // TODO: Logger
-                return ErrorCode.None;
+                if (log.consecutive_login_count == renewalLoginLog.consecutive_login_count)
+                {
+                    return (ErrorCode.AreadyLogin, renewalLoginLog);
+                }
+                return (ErrorCode.None, renewalLoginLog);
             }
             catch (MySqlException ex)
             {
-                return MysqlExceptionHandle(userId.ToString(), ex);
+                return (MysqlExceptionHandle(userId.ToString(), ex), renewalLoginLog);
+            }
+        }
+
+        public async Task<(ErrorCode, LoginLog?)> GetLoginLog(Int64 userId)
+        {
+            try
+            {
+                LoginLog? log = await _db.Query("login_log")
+                    .Where("user_id", userId)
+                    .Select("*")
+                    .FirstOrDefaultAsync<LoginLog>();
+                if (log == null)
+                {
+                    return (ErrorCode.GameDbError, null);
+                }
+                return (ErrorCode.None, log);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(userId.ToString(), ex), null);
             }
         }
 
@@ -208,6 +244,20 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
+        public async Task<ErrorCode> SendMail(Mail mail)
+        {
+
+            try
+            {
+                await _db.Query("mailbox").InsertAsync(mail);
+                return ErrorCode.None;
+            }
+            catch (MySqlException ex)
+            {
+                return MysqlExceptionHandle(mail.user_id.ToString(), ex);
+            }
+        }
+
         public async Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount)
         {
             IEnumerable<Mail> mails;
@@ -221,6 +271,7 @@ namespace DungeonFarming.DataBase.GameDb
                         q.Where("expiration_date", ">", DateTime.Now)
                         .OrWhere("expiration_date", null)
                     )
+                    //.ForPage()
                     .Limit(mailCount).Offset(startIndex).OrderBy("recieve_date")
                     .GetAsync<Mail>();
             }

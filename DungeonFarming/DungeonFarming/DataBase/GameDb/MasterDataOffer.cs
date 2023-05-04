@@ -37,6 +37,25 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
+        public List<ItemBundle>? getDailyLoginRewardItemBundles(Int32 dayCount)
+        {
+            if (_dailyLoginRewards.ContainsKey(dayCount))
+            {
+                List<ItemBundle> itemBundles = new List<ItemBundle>();
+                DailyLoginReward dailyLoginReward = _dailyLoginRewards[dayCount];
+                if (dailyLoginReward.item_code != -1 && dailyLoginReward.item_count != -1)
+                {
+                    itemBundles.Add(new ItemBundle
+                    {
+                        itemCode = dailyLoginReward.item_code,
+                        itemCount = dailyLoginReward.item_count
+                    });
+                }
+                return itemBundles;
+            }
+            return null;
+        }
+
         public ItemAttrubute? getItemAttrubute(Int16 attribute)
         {
             
@@ -113,7 +132,7 @@ namespace DungeonFarming.DataBase.GameDb
         {
             try
             {
-                IEnumerable<DailyLoginReward> masterData = _db.Query("mt_default_items_list")
+                IEnumerable<DailyLoginReward> masterData = _db.Query("mt_daily_login_rewards")
                     .Select("*").Get<DailyLoginReward>();
                 foreach (DailyLoginReward rewardElem in masterData)
                 {
