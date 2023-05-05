@@ -14,7 +14,8 @@ namespace DungeonFarming.DataBase.GameDb
         Task<ErrorCode> SetUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundles);
         Task<ErrorCode> SendMail(Mail mail);
         Task<(ErrorCode, List<UserItem>?)> GetUserItemList(Int64 userId);
-
+        Task<(ErrorCode, UserItem?)> GetUserItem(Int64 userId, Int64 itemId);
+        Task<ErrorCode> UpdateUserItem(UserItem newItem);
         Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount);
         Task<(ErrorCode, Mail?)> GetMail(Int64 userId, Int64 mailId);
 
