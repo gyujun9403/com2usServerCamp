@@ -17,9 +17,9 @@ namespace DungeonFarming.DataBase.GameDb
     public class MysqlGameDb : IGameDb
     {
         IMasterDataOffer _masterDataOffer;
-        ILogger<MysqlAccountDb> _logger;
+        ILogger<MysqlGameDb> _logger;
         QueryFactory _db;
-        public MysqlGameDb(IConfiguration config, IMasterDataOffer masterDataOffer, ILogger<MysqlAccountDb> logger)
+        public MysqlGameDb(IConfiguration config, IMasterDataOffer masterDataOffer, ILogger<MysqlGameDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Game");
             var connection = new MySqlConnection(connString);

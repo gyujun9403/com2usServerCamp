@@ -23,7 +23,12 @@ public enum ErrorCode : Int16
     WorngClientVersion = 40,
     WorngMasterDataVersion = 41,
 
-    // MAIL : 50 ~ 99
+    // MAIL : 50 ~ 59
     InvalidMailId = 50,
     InvalidMailPage = 51,
+
+    // Purchase : 60 ~ 69
+    InvalidPurchaseToken = 60,
+    InvalidPackageId = 61,
+    DuplicatedPurchaseToken = 62,
 }

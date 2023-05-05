@@ -71,6 +71,28 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
+        public List<ItemBundle>? getPackageItemBundles(Int16 packageCode)
+        {
+            if (_packages.ContainsKey(packageCode))
+            {
+                var items = _packages[packageCode];
+                var itemBundles = new List<ItemBundle>();
+                foreach (var item in items)
+                {
+                    if (item.item_code != -1 && item.item_count != -1)
+                    {
+                        itemBundles.Add(new ItemBundle
+                        {
+                            itemCode = item.item_code,
+                            itemCount = item.item_count
+                        });
+                    }
+                }
+                return itemBundles;
+            }
+            return null;
+        }
+
         public DefaultItems? getDefaultItems(Int16 listCode)
         {
             if (_defaultItemsList.ContainsKey(listCode))

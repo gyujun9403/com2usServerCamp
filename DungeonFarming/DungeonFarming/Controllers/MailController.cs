@@ -23,19 +23,29 @@ namespace DungeonFarming.Controllers
             _gameSessionDb = gameSessionDb;
             _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
         }
-       
-        [HttpPost("Preview")]
-        public async Task<MailPreviewResponse> GetMailPreviet(MailPreviewRequest request)
+
+        public Int64 GetUserPkId()
         {
-            MailPreviewResponse response = new MailPreviewResponse();
             Int64 userPkId = -1;
             if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
             {
                 if (long.TryParse(userPkIdStr, out userPkId) == false)
                 {
-                    response.errorCode = ErrorCode.GameDbError;
-                    return response;
+                    return -1;
                 }
+            }
+            return userPkId;
+        }
+
+        [HttpPost("Preview")]
+        public async Task<MailPreviewResponse> GetMailPreviet(MailPreviewRequest request)
+        {
+            MailPreviewResponse response = new MailPreviewResponse();
+            var userPkId = GetUserPkId();
+            if (userPkId < 0)
+            {
+                response.errorCode = ErrorCode.ServerError;
+                return response;
             }
             if (request.page < 0)
             {
