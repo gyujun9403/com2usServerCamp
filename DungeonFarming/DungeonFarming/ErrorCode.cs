@@ -38,4 +38,5 @@ public enum ErrorCode : Int16
     EnhancementFail = 71,
     EnhancementUnavailable = 72,
     MaxEnhancementLevelExceeded = 73,
+    InvalidEnhancementCount = 74,
 }

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DungeonFarming.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class ItemEnhanceController : ControllerBase
     {
@@ -35,7 +35,7 @@ namespace DungeonFarming.Controllers
             return userPkId;
         }
 
-        private ErrorCode CheckItemEnhancable(UserItem userItem)
+        private ErrorCode CheckItemEnhancable(Int16 reqEnhancementCnt, UserItem userItem)
         {
             // 강화 가능한 속성인지 확인
             var itemDefine = _masterDataOffer.getItemDefine(userItem.item_code);
@@ -55,6 +55,10 @@ namespace DungeonFarming.Controllers
             if (userItem.enhance_count >= itemDefine.enhance_max_count)
             {
                 return ErrorCode.MaxEnhancementLevelExceeded;
+            }
+            if (reqEnhancementCnt != userItem.enhance_count + 1)
+            {
+                return ErrorCode.InvalidEnhancementCount;
             }
             return ErrorCode.None;
         }
@@ -100,7 +104,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 아이템이 강화 가능한지, 현재 강화 스택에 맞는지 확인
-            response.errorCode = CheckItemEnhancable(userItem);
+            response.errorCode = CheckItemEnhancable(request.enhancementCount, userItem);
             if (response.errorCode != ErrorCode.None)
             {
                 return response;
@@ -108,8 +112,14 @@ namespace DungeonFarming.Controllers
             // 확률 계산을 함
             (rtErrorCode, userItem) = DoItemEnhancement(userItem);
             // 계산 후 결과를 DB에 저장
-            response.errorCode = await _gameDb.UpdateUserItem(userItem);
+            rtErrorCode = await _gameDb.UpdateUserItem(userItem);
+            if (rtErrorCode != ErrorCode.None)
+            {
+                response.errorCode = ErrorCode.ServerError;
+                return response;
+            }
             response.itemId = userItem.item_id;
+            response.userItems = userItem;
             // 결과를 클라에 전송.
             return response;
         }
