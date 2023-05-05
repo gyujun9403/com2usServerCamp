@@ -109,7 +109,7 @@ namespace DungeonFarming.DataBase.GameDb
         {
             try
             {
-                await _db.Query("game_user").InsertAsync(new { user_id = userId });
+                await _db.Query("login_log").InsertAsync(new { user_id = userId });
                 // TODO: Logger
                 return ErrorCode.None;
             }
@@ -244,6 +244,54 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
+        public async Task<(ErrorCode, UserItem?)> GetUserItem(Int64 userId, Int64 itemId)
+        {
+            try
+            {
+                UserItem? userItems = await _db.Query("user_items")
+                    .Select("*")
+                    .Where("user_id", userId)
+                    .Where("item_id", itemId)
+                    .FirstOrDefaultAsync<UserItem?>();
+                if (userItems == null)
+                {
+                    return (ErrorCode.InvalidItemId, null);
+                }
+                return (ErrorCode.None, userItems);
+            }
+            catch (MySqlException ex)
+            {
+                return (MysqlExceptionHandle(userId.ToString(), ex), null);
+            }
+        }
+
+        public async Task<ErrorCode> UpdateUserItem(UserItem newItem)
+        {
+            try
+            {
+                Int32 effectedRow = await _db.Query("user_items")
+                    .Where("user_id", newItem.user_id)
+                    .Where("item_id", newItem.item_id)
+                    .UpdateAsync( new {
+                        user_id = newItem.user_id,
+                        item_code = newItem.item_code,
+                        item_count = newItem.item_count,
+                        attack = newItem.attack,
+                        defence = newItem.defence,
+                        magic = newItem.magic,
+                        enhance_count = newItem.enhance_count
+                    });
+                if (effectedRow == 0)
+                {
+                    return ErrorCode.InvalidItemId;
+                }
+                return ErrorCode.None;
+            }
+            catch (MySqlException ex)
+            {
+                return MysqlExceptionHandle(newItem.item_id.ToString(), ex);
+            }
+        }
         public async Task<ErrorCode> SendMail(Mail mail)
         {
 

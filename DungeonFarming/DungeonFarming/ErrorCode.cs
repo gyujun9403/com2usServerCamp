@@ -17,6 +17,7 @@ public enum ErrorCode : Int16
     InvalidIdFormat = 11,
     DuplicatedId = 12,
     InvalidId = 13,
+    InvalidItemId = 14,
     InvalidToken = 20,
     InvalidPasswordFormat = 30,
     WorngPassword = 31,
@@ -31,4 +32,11 @@ public enum ErrorCode : Int16
     InvalidPurchaseToken = 60,
     InvalidPackageId = 61,
     DuplicatedPurchaseToken = 62,
+
+    // Enhensement : 70 ~ 79
+    EnhancementSucess = 70,
+    EnhancementFail = 71,
+    EnhancementUnavailable = 72,
+    MaxEnhancementLevelExceeded = 73,
+    InvalidEnhancementCount = 74,
 }
