@@ -23,7 +23,7 @@ namespace DungeonFarming.Controllers
             _masterDataOffer = masterDataOffer;
         }
 
-        private Mail ReGenerateLoginwardMail(LoginLog log, List<ItemBundle>? itemBundle) 
+        private Mail ReGenerateLoginRewardMail(LoginLog log, List<ItemBundle>? itemBundle) 
         {
             var mail = new Mail();
             mail.user_id = log.user_id;
@@ -123,7 +123,7 @@ namespace DungeonFarming.Controllers
             if (response.errorCode == ErrorCode.None)
             {
                 List<ItemBundle>? reward = _masterDataOffer.getDailyLoginRewardItemBundles(loginLog.consecutive_login_count);
-                response.errorCode = await _gameDb.SendMail(ReGenerateLoginwardMail(loginLog, reward));
+                response.errorCode = await _gameDb.SendMail(ReGenerateLoginRewardMail(loginLog, reward));
             }
             // 2. 유저 장비 정보를 가져옴
             var (errorCode, userItems) = await _gameDb.GetUserItemList(rt.userAccountTuple.pk_id.Value);

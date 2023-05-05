@@ -7,6 +7,7 @@ using DungeonFarming.Middleware;
 using ZLogger;
 using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DataBase.GameDb;
+using DungeonFarming.DataBase.PurchaseDb;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,7 @@ builder.Services.AddLogging();
 builder.Services.AddControllers();
 builder.Services.AddTransient<IAccountDb, MysqlAccountDb>();
 builder.Services.AddTransient<IGameDb, MysqlGameDb>();
+builder.Services.AddTransient<IPurchaseDb, MysqlPurchaseDb>();
 builder.Services.AddSingleton<IGameSessionDb, RedisGameSessionDb>();
 builder.Services.AddSingleton<IMasterDataOffer, MasterDataOffer>();
 var app = builder.Build();
