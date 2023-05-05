@@ -15,7 +15,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
         QueryFactory _db;
         public MysqlPurchaseDb(IConfiguration config, IMasterDataOffer masterDataOffer, ILogger<MysqlPurchaseDb> logger)
         {
-            var connString = config.GetConnectionString("Mysql_Game");
+            var connString = config.GetConnectionString("Mysql_Purchase");
             var connection = new MySqlConnection(connString);
             var compiler = new MySqlCompiler();
             _db = new QueryFactory(connection, compiler);
@@ -58,8 +58,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
             try
             {
                 await _db.Query("purchase_histories")
-                    .InsertAsync( new PurchaseHistory
-                    { 
+                    .InsertAsync( new { 
                         user_id = userId,
                         purchase_token = purchaseToken,
                         package_code = packageCode,

@@ -78,6 +78,7 @@ namespace DungeonFarming.Controllers
         public async Task<PackagePurchaseResponse> PackagePurchase(PackagePurchaseRequest request)
         {
             PackagePurchaseResponse response = new PackagePurchaseResponse();
+            response.packageListId = -1;
             Int64 userPkId = GetUserPkId();
             if (userPkId < 0)
             {
@@ -85,7 +86,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 영수증 유효성 확인
-            if (CheckPurchaseValid(request.purchaseToken))
+            if (CheckPurchaseValid(request.purchaseToken) == false)
             {
                 response.errorCode = ErrorCode.InvalidPurchaseToken;
                 return response;
@@ -113,6 +114,10 @@ namespace DungeonFarming.Controllers
             }
             // 유저에게 메일로 전송
             response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(userPkId, request.packageCode, itemBundle));
+            if (response.errorCode == ErrorCode.None)
+            {
+                response.packageListId = request.packageCode;
+            }
             return response;
         }
     }
