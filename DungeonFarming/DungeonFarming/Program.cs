@@ -1,7 +1,3 @@
-using SqlKata;
-using SqlKata.Compilers;
-using SqlKata.Execution;
-using MySqlConnector;
 using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.Middleware;
 using ZLogger;
@@ -16,7 +12,7 @@ builder.Host.ConfigureLogging(logging =>
     logging.ClearProviders();
     logging.SetMinimumLevel(LogLevel.Debug);
     logging.AddZLoggerConsole();
-    logging.AddZLoggerFile("TestLogFile.log");
+    logging.AddZLoggerFile("MainLog.log");
     logging.AddZLoggerRollingFile((dt, x) => $"logs/{dt.ToLocalTime():yyyy-MM-dd}_{x:000}.log", x => x.ToLocalTime().Date, 1024);
     logging.AddZLoggerConsole(options => { options.EnableStructuredLogging = true; });
 });
@@ -27,6 +23,7 @@ builder.Services.AddTransient<IGameDb, MysqlGameDb>();
 builder.Services.AddTransient<IPurchaseDb, MysqlPurchaseDb>();
 builder.Services.AddSingleton<IGameSessionDb, RedisGameSessionDb>();
 builder.Services.AddSingleton<IMasterDataOffer, MasterDataOffer>();
+
 var app = builder.Build();
 var masterDataOffer = app.Services.GetRequiredService<IMasterDataOffer>();
 masterDataOffer.LoadMasterDatas();

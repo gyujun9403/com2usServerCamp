@@ -3,7 +3,7 @@
     public String userId { get; set; }
     public String password { get; set; }
 }
-public class RegisterResponse : ResponseBaseData
+public class RegisterResponse : ResponseBase
 {
 
 }

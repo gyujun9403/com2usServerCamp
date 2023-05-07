@@ -10,7 +10,7 @@ public class LoginRequest
 }
 
 [Serializable]
-public class LoginResponse : ResponseBaseData
+public class LoginResponse : ResponseBase
 {
     public String token { get; set; }
     public List<UserItem> userItems { get; set; } = new();

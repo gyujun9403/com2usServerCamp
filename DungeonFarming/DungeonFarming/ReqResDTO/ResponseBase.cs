@@ -1,5 +1,5 @@
 ﻿
-public class ResponseBaseData
+public class ResponseBase
 {
     public ErrorCode errorCode { get; set; }
 }

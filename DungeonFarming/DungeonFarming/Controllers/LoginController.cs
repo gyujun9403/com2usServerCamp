@@ -60,7 +60,7 @@ namespace DungeonFarming.Controllers
             LoginResponse response = new LoginResponse();
 
             // 계정 정보 가져오고 확인
-            (ErrorCode errorCode, UserAccountsTuple? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.userId);
+            (ErrorCode errorCode, UserAccountDto? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.userId);
             if (rt.errorCode != ErrorCode.None)
             {
                 response.errorCode = rt.errorCode;

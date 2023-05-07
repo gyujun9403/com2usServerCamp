@@ -23,6 +23,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
             _masterDataOffer = masterDataOffer;
         }
 
+        //
         private ErrorCode MysqlExceptionHandle(String configString, MySqlException ex)
         {
             if (ex.Number == 1062) //duplicated id exception

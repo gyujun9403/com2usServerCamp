@@ -8,13 +8,13 @@ namespace DungeonFarming.DataBase.GameDb
 {
     public class MasterDataOffer : IMasterDataOffer
     {
-        private ILogger<MysqlAccountDb> _logger;
+        ILogger<MysqlAccountDb> _logger;
         QueryFactory _db;
-        private Dictionary<Int32, DailyLoginReward> _dailyLoginRewards = new Dictionary<Int32, DailyLoginReward>();
-        private Dictionary<Int16, ItemAttrubute> _itemAttributes = new Dictionary<Int16, ItemAttrubute>();
-        private Dictionary<Int16, List<PackageItem> > _packages = new Dictionary<Int16, List<PackageItem> >();
-        private Dictionary<Int16, DefaultItems> _defaultItemsList = new Dictionary<Int16, DefaultItems>();
-        private Dictionary<Int16, ItemDefine> _itemDefines = new Dictionary<Int16, ItemDefine>();
+        Dictionary<Int32, DailyLoginReward> _dailyLoginRewards = new Dictionary<Int32, DailyLoginReward>();
+        Dictionary<Int16, ItemAttrubute> _itemAttributes = new Dictionary<Int16, ItemAttrubute>();
+        Dictionary<Int16, List<PackageItem> > _packages = new Dictionary<Int16, List<PackageItem> >();
+        Dictionary<Int16, DefaultItems> _defaultItemsList = new Dictionary<Int16, DefaultItems>();
+        Dictionary<Int16, ItemDefine> _itemDefines = new Dictionary<Int16, ItemDefine>();
         public MasterDataOffer(IConfiguration config, ILogger<MysqlAccountDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Game");
@@ -24,19 +24,26 @@ namespace DungeonFarming.DataBase.GameDb
             _logger = logger;
         }
 
+
+        /*-------------------------
+             마스터 데이터 로드
+        --------------------------*/
         public bool LoadMasterDatas()
         {
             return (LoadDailyLoginRewards() && LoadItemAttributes() 
                 && LoadPackage() && LoadDefaultItemLists() && LoadItemDefines());
         }
 
+
+        /*-------------------------
+         마스터 데이터 데이터 getter
+        --------------------------*/
         public DailyLoginReward? getDailyLoginReward(Int32 dayCount)
         {
             if (_dailyLoginRewards.ContainsKey(dayCount))
                 return _dailyLoginRewards[dayCount];
             return null;
         }
-
         public List<ItemBundle>? getDailyLoginRewardItemBundles(Int32 dayCount)
         {
             if (_dailyLoginRewards.ContainsKey(dayCount))
@@ -55,7 +62,6 @@ namespace DungeonFarming.DataBase.GameDb
             }
             return null;
         }
-
         public ItemAttrubute? getItemAttrubute(Int16 attribute)
         {
             
@@ -63,14 +69,12 @@ namespace DungeonFarming.DataBase.GameDb
                 return _itemAttributes[attribute];
             return null;
         }
-
         public List<PackageItem>? getPackage(Int16 packageCode)
         {
             if (_packages.ContainsKey(packageCode))
                 return _packages[packageCode];
             return null;
         }
-
         public List<ItemBundle>? getPackageItemBundles(Int16 packageCode)
         {
             if (_packages.ContainsKey(packageCode))
@@ -92,14 +96,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             return null;
         }
-
         public DefaultItems? getDefaultItems(Int16 listCode)
         {
             if (_defaultItemsList.ContainsKey(listCode))
                 return _defaultItemsList[listCode];
             return null;
         }
-
         public List<ItemBundle>? getDefaultItemBundles(Int16 listCode)
         {
             if (_defaultItemsList.ContainsKey(listCode))
@@ -142,7 +144,6 @@ namespace DungeonFarming.DataBase.GameDb
             }
             return null;
         }
-
         public ItemDefine? getItemDefine(Int16 itemCode)
         {
             if (_itemDefines.ContainsKey(itemCode))
@@ -150,7 +151,11 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        private bool LoadDailyLoginRewards()
+
+        /*-------------------------
+         마스터 데이터 각 테이블 로드
+        --------------------------*/
+        bool LoadDailyLoginRewards()
         {
             try
             {
@@ -168,8 +173,7 @@ namespace DungeonFarming.DataBase.GameDb
                 return false;
             }
         }
-
-        private bool LoadItemAttributes()
+        bool LoadItemAttributes()
         {
             try
             {
@@ -187,8 +191,7 @@ namespace DungeonFarming.DataBase.GameDb
                 return false;
             }
         }
-
-        private bool LoadPackage()
+        bool LoadPackage()
         {
             try
             {
@@ -213,8 +216,7 @@ namespace DungeonFarming.DataBase.GameDb
                 return false;
             }
         }
-
-        private bool LoadDefaultItemLists()
+        bool LoadDefaultItemLists()
         {
             try
             {
@@ -232,8 +234,7 @@ namespace DungeonFarming.DataBase.GameDb
                 return false;
             }
         }
-
-        private bool LoadItemDefines()
+        bool LoadItemDefines()
         {
             try
             {

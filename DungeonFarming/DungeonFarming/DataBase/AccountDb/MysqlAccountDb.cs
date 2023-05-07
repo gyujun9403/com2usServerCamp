@@ -55,13 +55,13 @@ namespace DungeonFarming.DataBase.AccountDb
             }
         }
 
-        public async Task<(ErrorCode, UserAccountsTuple?)> GetAccountInfo(string userId)
+        public async Task<(ErrorCode, UserAccountDto?)> GetAccountInfo(string userId)
         {
             try
             {
                 var rt = await _db.Query("user_accounts")
                     .Select("pk_id", "user_id", "salt", "hashed_password")
-                    .Where("user_id", userId).FirstAsync<UserAccountsTuple>();
+                    .Where("user_id", userId).FirstAsync<UserAccountDto>();
                 if (rt.pk_id == null || rt.user_id == "" 
                     || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
                 {
@@ -83,7 +83,7 @@ namespace DungeonFarming.DataBase.AccountDb
             }
         }
 
-        public async Task<(ErrorCode, Int16)> RegisteUser(UserAccountsTuple model)
+        public async Task<(ErrorCode, Int16)> RegisteUser(UserAccountDto model)
         {
             try
             {

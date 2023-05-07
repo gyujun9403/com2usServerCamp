@@ -110,7 +110,7 @@ namespace DungeonFarming.Controllers
                 response.errorCode = ErrorCode.InvalidMailId;
                 return response;
             }
-            response.errorCode = await _gameDb.RecvMailItem(userPkId, request.mailId);
+            response.errorCode = await _gameDb.RecvMailItems(userPkId, request.mailId);
             return response;
         }
 
