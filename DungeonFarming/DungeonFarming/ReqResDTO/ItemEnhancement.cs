@@ -2,12 +2,12 @@
 
 namespace DungeonFarming.DTO
 {
-    public class ItemEnhancementRequest : RequestBaseData
+    public class ItemEnhancementRequest : RequestBase
     {
         public Int64 itemId { get; set; }
         public Int16 enhancementCount { get; set; }
     }
-    public class ItemEnhancementResponse : ResponseBaseData
+    public class ItemEnhancementResponse : ResponseBase
     {
         public Int64 itemId { get; set; } = -1;
         public UserItem? userItems { get; set; } = new();

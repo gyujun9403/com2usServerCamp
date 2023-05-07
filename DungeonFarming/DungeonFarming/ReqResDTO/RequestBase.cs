@@ -1,4 +1,4 @@
-﻿public class RequestBaseData
+﻿public class RequestBase
 {
     public String userId { get; set; }
     public String token { get; set; }

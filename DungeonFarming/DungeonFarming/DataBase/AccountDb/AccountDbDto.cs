@@ -1,6 +1,6 @@
 ﻿namespace DungeonFarming.DataBase.AccountDb
 {
-    public class UserAccountsTuple
+    public class UserAccountDto
     {
         public Int64? pk_id { get; set; }
         public String user_id { get; set;}
