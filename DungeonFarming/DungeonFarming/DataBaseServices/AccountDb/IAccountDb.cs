@@ -7,7 +7,7 @@
         // 유저 정보 찾아오기
         Task<(ErrorCode, UserAccountDto?)> GetAccountInfo(String userId);
 
-        Task<ErrorCode> DeleteAccount(String userId);
+        //Task<ErrorCode> DeleteAccount(String userId);
 
     }
 }

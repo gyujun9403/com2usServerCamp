@@ -4,7 +4,7 @@ namespace DungeonFarming.DataBase.GameDb
 {
     public interface IMasterDataOffer
     {
-        public bool LoadMasterDatas();
+        public bool LoadMasterData();
         public DailyLoginReward? getDailyLoginReward(Int32 dayCount);
         public List<ItemBundle>? getDailyLoginRewardItemBundles(Int32 dayCount);
         public ItemAttrubute? getItemAttrubute(Int16 attribute);

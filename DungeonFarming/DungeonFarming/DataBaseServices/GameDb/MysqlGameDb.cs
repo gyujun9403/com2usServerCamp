@@ -12,9 +12,9 @@ namespace DungeonFarming.DataBase.GameDb
 {
     public class MysqlGameDb : IGameDb
     {
-        IMasterDataOffer _masterDataOffer;
-        ILogger<MysqlGameDb> _logger;
-        QueryFactory _db;
+        readonly IMasterDataOffer _masterDataOffer;
+        readonly ILogger<MysqlGameDb> _logger;
+        readonly QueryFactory _db;
         public MysqlGameDb(IConfiguration config, IMasterDataOffer masterDataOffer, ILogger<MysqlGameDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Game");
@@ -28,7 +28,7 @@ namespace DungeonFarming.DataBase.GameDb
         /*-------------------------
            클래스 내부 Util 함수들
         --------------------------*/
-        String? generateItemsInsertQuery(Int64 userId, List<ItemBundle> itemBundles)
+        String? GenerateItemsInsertQuery(Int64 userId, List<ItemBundle> itemBundles)
         {
             String query = "INSERT INTO user_items (user_id, item_code, item_count, attack, defence, magic, enhance_count) VALUES ";
             foreach (ItemBundle itemBundle in itemBundles)
@@ -67,7 +67,7 @@ namespace DungeonFarming.DataBase.GameDb
                 last_login_date = DateTime.Now
             };
         }
-        object getMailItemDefaultObj()
+        object GetMailItemDefaultObj()
         {
             return new
             {
@@ -81,6 +81,146 @@ namespace DungeonFarming.DataBase.GameDb
                 item3_count = -1,
             };
         }
+        // TODO: 💥💥💥 코드 개선 필요.
+        async Task<(ErrorCode, List<ItemBundle>?, List<ItemBundle>?)> SortMailItemsByInsertBundleOrUpdateBundle(Int64 userId, Mail mail)
+        {
+            List<ItemBundle>? updateBundle = new List<ItemBundle>();
+            List<ItemBundle>? insertBundle = new List<ItemBundle>();
+            try
+            {
+                if (mail.item0_code != -1 || mail.item0_count != -1)
+                {
+                    if (_masterDataOffer.getItemDefine(mail.item0_code).max_stack > 1)
+                    {
+                        Int32? stackedItemCount = await _db.Query("user_items")
+                            .Select("item_count")
+                            .Where("user_id", userId)
+                            .Where("item_code", mail.item0_code)
+                            .FirstOrDefaultAsync<Int32?>();
+                        if (stackedItemCount != null)
+                        {
+                            if (stackedItemCount + mail.item0_count > _masterDataOffer.getItemDefine(mail.item0_code).max_stack)
+                            {
+                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item0 stack overflow");
+                                return (ErrorCode.ItemCountExceeded, null, null);
+                            }
+                            updateBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = stackedItemCount.Value + mail.item0_count });
+                        }
+                        else
+                        {
+                            insertBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = mail.item0_count });
+                        }
+                    }
+                    else
+                    {
+                        insertBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = mail.item0_count });
+                    }
+                }
+                if (mail.item1_code != -1 || mail.item1_count != -1)
+                {
+                    if (_masterDataOffer.getItemDefine(mail.item1_code).max_stack > 1)
+                    {
+                        Int32? stackedItemCount = await _db.Query("user_items")
+                            .Select("item_count")
+                            .Where("user_id", userId)
+                            .Where("item_code", mail.item1_code)
+                            .FirstOrDefaultAsync<Int32?>();
+                        if (stackedItemCount != null)
+                        {
+                            if (stackedItemCount + mail.item1_count > _masterDataOffer.getItemDefine(mail.item1_code).max_stack)
+                            {
+                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item1 stack overflow");
+                                return (ErrorCode.ItemCountExceeded, null, null);
+                            }
+                            updateBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = stackedItemCount.Value + mail.item1_count });
+                        }
+                        else
+                        {
+                            insertBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = mail.item1_count });
+                        }
+                    }
+                    else
+                    {
+                        insertBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = mail.item1_count });
+                    }
+                }
+                if (mail.item2_code != -1 || mail.item2_count != -1)
+                {
+                    if (_masterDataOffer.getItemDefine(mail.item2_code).max_stack > 1)
+                    {
+                        Int32? stackedItemCount = await _db.Query("user_items")
+                            .Select("item_count")
+                            .Where("user_id", userId)
+                            .Where("item_code", mail.item2_code)
+                            .FirstOrDefaultAsync<Int32?>();
+                        if (stackedItemCount != null)
+                        {
+                            if (stackedItemCount + mail.item2_count > _masterDataOffer.getItemDefine(mail.item2_code).max_stack)
+                            {
+                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item2 stack overflow");
+                                return (ErrorCode.ItemCountExceeded, null, null);
+                            }
+                            updateBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = stackedItemCount.Value + mail.item2_count });
+                        }
+                        else
+                        {
+                            insertBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = mail.item2_count });
+                        }
+                    }
+                    else
+                    {
+                        insertBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = mail.item2_count });
+                    }
+                }
+                if (mail.item3_code != -1 || mail.item3_count != -1)
+                {
+                    if (_masterDataOffer.getItemDefine(mail.item3_code).max_stack > 1)
+                    {
+                        Int32? stackedItemCount = await _db.Query("user_items")
+                            .Select("item_count")
+                            .Where("user_id", userId)
+                            .Where("item_code", mail.item3_code)
+                            .FirstOrDefaultAsync<Int32?>();
+                        if (stackedItemCount != null)
+                        {
+                            if (stackedItemCount + mail.item3_count > _masterDataOffer.getItemDefine(mail.item3_code).max_stack)
+                            {
+                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item3 stack overflow");
+                                return (ErrorCode.ItemCountExceeded, null, null);
+                            }
+                            updateBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = stackedItemCount.Value + mail.item3_count });
+                        }
+                        else
+                        {
+                            insertBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = mail.item3_count });
+                        }
+                    }
+                    else
+                    {
+                        insertBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = mail.item3_count });
+                    }
+                }
+                if (updateBundle.Count == 0)
+                {
+                    updateBundle = null;
+                }
+                if (insertBundle.Count == 0)
+                {
+                    insertBundle = null;
+                }
+                return (ErrorCode.None, insertBundle, updateBundle);
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { itemId = userId, mail = mail }, "CheckMailItemUpdatable MysqlEXCEPTION");
+                return (ErrorCode.GameDbError, null, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { itemId = userId, mail = mail }, "CheckMailItemUpdatable EXCEPTION");
+                return (ErrorCode.GameDbError, null, null);
+            }
+        }
 
 
         /*-------------------------
@@ -91,7 +231,6 @@ namespace DungeonFarming.DataBase.GameDb
             try
             {
                 await _db.Query("login_log").InsertAsync(new { user_id = userId });
-                // TODO: Logger
                 return ErrorCode.None;
             }
             catch (MySqlException ex)
@@ -123,7 +262,6 @@ namespace DungeonFarming.DataBase.GameDb
                 await _db.Query("login_log")
                     .Where("user_id", userId)
                     .UpdateAsync(renewalLoginLog);
-                // TODO: Logger
                 if (log.consecutive_login_count == renewalLoginLog.consecutive_login_count)
                 {
                     return (ErrorCode.AreadyLogin, renewalLoginLog);
@@ -163,7 +301,7 @@ namespace DungeonFarming.DataBase.GameDb
         --------------------------*/
         public async Task<ErrorCode> InsertUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundles)
         {
-            String? query = generateItemsInsertQuery(userId, itemBundles);
+            String? query = GenerateItemsInsertQuery(userId, itemBundles);
             if (query == null)
             {
                 return ErrorCode.GameDbError;
@@ -240,30 +378,34 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        // 로직상 stackable한 아이템들을 update가능함이 보장된다. 
-        async Task<ErrorCode> UpdateItemCount(Int64 userId, List<ItemBundle> stackableItemBundle)
+        // 로직상 stackable한 아이템들을 update가능함이 보장되게 작성. 
+        // TODO: update실패 검증을 다시 해야 할지 고민 할 것.
+        async Task<ErrorCode> UpdateUserItemsCountByItemBundle(Int64 userId, List<ItemBundle> updateItemBundle)
         {
             try
             {
-                foreach (var bundle in stackableItemBundle)
+                foreach (var bundle in updateItemBundle)
                 {
-                    // TODO: 맨 첫번째 쿼리에만 적용되게?
                     var rowCnt = await _db.Query("user_items")
                         .Where("user_id", userId)
                         .Where("item_code", bundle.itemCode)
                         .Limit(1)
                         .UpdateAsync(new { item_count = bundle.itemCount });
+                    if (rowCnt == 0)
+                    {
+                        _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, ItemBundle = bundle }, "UpdateUserItemsCountByItemBundle update count FAIL");
+                    }
                 }
                 return ErrorCode.None;
             }
             catch (MySqlException ex)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, ItemBundle = stackableItemBundle }, "UpdateItemCount MysqlEXCEPTION");
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, ItemBundle = updateItemBundle }, "UpdateUserItemsCountByItemBundle MysqlEXCEPTION");
                 return ErrorCode.GameDbError;
             }
             catch (Exception ex)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, ItemBundle = stackableItemBundle }, "UpdateItemCount EXCEPTION");
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, ItemBundle = updateItemBundle }, "UpdateUserItemsCountByItemBundle EXCEPTION");
                 return ErrorCode.GameDbError;
             }
         }
@@ -300,7 +442,6 @@ namespace DungeonFarming.DataBase.GameDb
                     )
                     .Limit(mailCount).Offset(startIndex).OrderBy("recieve_date")
                     .GetAsync<Mail>();
-                    //.ForPage()?
             }
             catch (Exception ex)
             {
@@ -354,146 +495,7 @@ namespace DungeonFarming.DataBase.GameDb
             }
         }
 
-        // TODO: 좀 더 보편적으로 바꾸기. item list를 받아서 바꾸게.
-        async Task<(ErrorCode, List<ItemBundle>?, List<ItemBundle>?)> SortStakableBundle(Int64 userId, Mail mail)
-        {
-            List<ItemBundle>? stackableBundle = new List<ItemBundle>();
-            List<ItemBundle>? nonStackableBundle = new List<ItemBundle>();
-            try
-            {
-                if (mail.item0_code != -1 || mail.item0_count != -1)
-                { 
-                    if( _masterDataOffer.getItemDefine(mail.item0_code).max_stack > 1)
-                    {
-                        Int32? stackedItemCount = await _db.Query("user_items")
-                            .Select("item_count")
-                            .Where("user_id", userId)
-                            .Where("item_code", mail.item0_code)
-                            .FirstOrDefaultAsync<Int32?>();
-                        if (stackedItemCount != null)
-                        { 
-                            if (stackedItemCount + mail.item0_count > _masterDataOffer.getItemDefine(mail.item0_code).max_stack)
-                            {
-                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item0 stack overflow");
-                                return (ErrorCode.ItemCountExceeded, null, null);
-                            }
-                            stackableBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = stackedItemCount.Value + mail.item0_count });
-                        }
-                        else
-                        {
-                            nonStackableBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = mail.item0_count });
-                        }
-                    }
-                    else
-                    {
-                        nonStackableBundle.Add(new ItemBundle { itemCode = mail.item0_code, itemCount = mail.item0_count });
-                    }
-                }
-                if (mail.item1_code != -1 || mail.item1_count != -1)
-                {
-                    if (_masterDataOffer.getItemDefine(mail.item1_code).max_stack > 1)
-                    {
-                        Int32? stackedItemCount = await _db.Query("user_items")
-                            .Select("item_count")
-                            .Where("user_id", userId)
-                            .Where("item_code", mail.item1_code)
-                            .FirstOrDefaultAsync<Int32?>();
-                        if (stackedItemCount != null)
-                        {
-                            if (stackedItemCount + mail.item1_count > _masterDataOffer.getItemDefine(mail.item1_code).max_stack)
-                            {
-                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item1 stack overflow");
-                                return (ErrorCode.ItemCountExceeded, null, null);
-                            }
-                            stackableBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = stackedItemCount.Value + mail.item1_count });
-                        }
-                        else
-                        {
-                            nonStackableBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = mail.item1_count });
-                        }
-                    }
-                    else
-                    {
-                        nonStackableBundle.Add(new ItemBundle { itemCode = mail.item1_code, itemCount = mail.item1_count });
-                    }
-                }
-                if (mail.item2_code != -1 || mail.item2_count != -1)
-                {
-                    if (_masterDataOffer.getItemDefine(mail.item2_code).max_stack > 1)
-                    {
-                        Int32? stackedItemCount = await _db.Query("user_items")
-                            .Select("item_count")
-                            .Where("user_id", userId)
-                            .Where("item_code", mail.item2_code)
-                            .FirstOrDefaultAsync<Int32?>();
-                        if (stackedItemCount != null)
-                        {
-                            if (stackedItemCount + mail.item2_count > _masterDataOffer.getItemDefine(mail.item2_code).max_stack)
-                            {
-                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item2 stack overflow");
-                                return (ErrorCode.ItemCountExceeded, null, null);
-                            }
-                            stackableBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = stackedItemCount.Value + mail.item2_count });
-                        }
-                        else
-                        {
-                            nonStackableBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = mail.item2_count });
-                        }
-                    }
-                    else
-                    {
-                        nonStackableBundle.Add(new ItemBundle { itemCode = mail.item2_code, itemCount = mail.item2_count });
-                    }
-                }
-                if (mail.item3_code != -1 || mail.item3_count != -1)
-                {
-                    if (_masterDataOffer.getItemDefine(mail.item3_code).max_stack > 1)
-                    {
-                        Int32? stackedItemCount = await _db.Query("user_items")
-                            .Select("item_count")
-                            .Where("user_id", userId)
-                            .Where("item_code", mail.item3_code)
-                            .FirstOrDefaultAsync<Int32?>();
-                        if (stackedItemCount != null)
-                        {
-                            if (stackedItemCount + mail.item3_count > _masterDataOffer.getItemDefine(mail.item3_code).max_stack)
-                            {
-                                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mail.mail_id }, "RecvMailItems item3 stack overflow");
-                                return (ErrorCode.ItemCountExceeded, null, null);
-                            }
-                            stackableBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = stackedItemCount.Value + mail.item3_count });
-                        }
-                        else
-                        {
-                            nonStackableBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = mail.item3_count });
-                        }
-                    }
-                    else
-                    {
-                        nonStackableBundle.Add(new ItemBundle { itemCode = mail.item3_code, itemCount = mail.item3_count });
-                    }
-                }
-                if (stackableBundle.Count == 0)
-                {
-                    stackableBundle = null;
-                }
-                if (nonStackableBundle.Count == 0)
-                {
-                    nonStackableBundle = null;
-                }
-                return (ErrorCode.None, stackableBundle, nonStackableBundle);
-            }
-            catch (MySqlException ex)
-            {
-                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { itemId = userId, mail = mail }, "CheckMailItemUpdatable MysqlEXCEPTION");
-                return (ErrorCode.GameDbError, null, null);
-            }
-            catch (Exception ex)
-            {
-                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { itemId = userId, mail = mail }, "CheckMailItemUpdatable EXCEPTION");
-                return (ErrorCode.GameDbError, null, null);
-            }
-        }
+        
 
         // TODO: 코드 개선 필요...
         public async Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId)
@@ -518,13 +520,13 @@ namespace DungeonFarming.DataBase.GameDb
                 }
 
                 // Insert할 번들과 Update할 번들을 나누며, 유저가 우편을 받을 수 있는지 확인한다.
-                var (rtErrorCode, stackableBundle, nonStackableBundle ) = await SortStakableBundle(userId, mail);
+                var (rtErrorCode, insertBundle, updateBundle) = await SortMailItemsByInsertBundleOrUpdateBundle(userId, mail);
                 if (rtErrorCode == ErrorCode.ItemCountExceeded) // 초가되는 품목이 있다면 우편을 냅둔다.
                 {
                     _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mail = mail }, "RecvMailItems item stack overflow");
                     return ErrorCode.ItemCountExceeded;
                 }
-                if (stackableBundle == null && nonStackableBundle == null) // 아무 아이템도 없는 경우.
+                if (updateBundle == null && insertBundle == null) // 아무 아이템도 없는 경우.
                 {
                     return ErrorCode.Noitems;
                 }
@@ -542,21 +544,21 @@ namespace DungeonFarming.DataBase.GameDb
                     .Where(q =>
                         q.Where("expiration_date", ">", DateTime.Now)
                         .OrWhere("expiration_date", null))
-                    .UpdateAsync( getMailItemDefaultObj() );
+                    .UpdateAsync( GetMailItemDefaultObj() );
 
                 // 이후, 누적 불가한 아이템은 Insert, 누적 가능한 아이템은 Update한다.
-                if (nonStackableBundle != null)
+                if (insertBundle != null)
                 {
-                    rtErrorCode = await InsertUserItemsByItemBundles(userId, nonStackableBundle);
+                    rtErrorCode = await InsertUserItemsByItemBundles(userId, insertBundle);
                     if (rtErrorCode != ErrorCode.None)
                     {
                         _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mail = mail }, "RecvMailItems insert nonStackableBundle EXCEPTION");
                         return rtErrorCode;
                     }
                 }
-                if (stackableBundle != null)
+                if (updateBundle != null)
                 {
-                    rtErrorCode = await UpdateItemCount(userId, stackableBundle);
+                    rtErrorCode = await UpdateUserItemsCountByItemBundle(userId, updateBundle);
                     if (rtErrorCode != ErrorCode.None)
                     {
                         _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mail = mail }, "RecvMailItems update stackableBundle EXCEPTION");

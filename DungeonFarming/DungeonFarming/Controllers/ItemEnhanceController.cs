@@ -12,9 +12,9 @@ namespace DungeonFarming.Controllers
     [ApiController]
     public class ItemEnhanceController : ControllerBase
     {
-        ILogger<ItemEnhanceController> _logger;
-        IGameDb _gameDb;
-        IMasterDataOffer _masterDataOffer;
+        readonly ILogger<ItemEnhanceController> _logger;
+        readonly IGameDb _gameDb;
+        readonly IMasterDataOffer _masterDataOffer;
 
         public ItemEnhanceController(ILogger<ItemEnhanceController> logger, IGameDb gameDb, IMasterDataOffer masterDataOffer)
         {

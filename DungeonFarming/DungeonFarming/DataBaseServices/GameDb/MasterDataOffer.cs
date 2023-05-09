@@ -29,7 +29,7 @@ namespace DungeonFarming.DataBase.GameDb
         /*-------------------------
              마스터 데이터 로드
         --------------------------*/
-        public bool LoadMasterDatas()
+        public bool LoadMasterData()
         {
             return (LoadDailyLoginRewards() && LoadItemAttributes() 
                 && LoadPackage() && LoadDefaultItemLists() && LoadItemDefines());

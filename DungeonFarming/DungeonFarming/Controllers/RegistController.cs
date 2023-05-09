@@ -29,13 +29,13 @@ namespace DungeonFarming.Controllers
         public async Task<RegisterResponse> Registration(RegisteRequest request)
         {
             RegisterResponse response = new RegisterResponse();
-            (byte[] saltBytes, byte[] hashedPasswordBytes) rt = Security.GetSaltAndHashedPassword(request.password);
+            var (saltBytes, hashedPasswordBytes) = Security.GetSaltAndHashedPassword(request.password);
             var (errorCode, pkId) = await _accountDb.RegisteUser(new UserAccountDto
             {
                 pk_id = null,
                 user_id = request.userId,
-                salt = rt.saltBytes,
-                hashed_password = rt.hashedPasswordBytes
+                salt = saltBytes,
+                hashed_password = hashedPasswordBytes
             });
             response.errorCode = errorCode;
             if (response.errorCode != ErrorCode.None)
@@ -47,7 +47,6 @@ namespace DungeonFarming.Controllers
             // 0. GameDb에 유저를 등록한다.
             if (await _gameDb.RegistGameUser(pkId) != ErrorCode.None)
             {
-                //_logger.ZLogError($"[Registration] Error : {request.userId} - RegistUserInGame");
                 _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb regist FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;

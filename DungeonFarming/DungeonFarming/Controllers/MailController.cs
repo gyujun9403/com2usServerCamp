@@ -15,13 +15,10 @@ namespace DungeonFarming.Controllers
         readonly Int16 _mailsPerPage;
         readonly ILogger<MailController> _logger;
         readonly IGameDb _gameDb;
-        readonly IGameSessionDb _gameSessionDb;
-
-        public MailController(IConfiguration config, ILogger<MailController> logger, IGameDb gameDb, IGameSessionDb gameSessionDb)
+        public MailController(IConfiguration config, ILogger<MailController> logger, IGameDb gameDb)
         {
             _logger = logger;
             _gameDb = gameDb;
-            _gameSessionDb = gameSessionDb;
             _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
         }
 

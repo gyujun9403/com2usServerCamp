@@ -93,7 +93,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
 
-            // 토큰 가져오고 검증.
+            // 토큰 발급하고 세션 생성.
             String token = Security.GenerateToken();
             response.errorCode = await _gameSessionDb.SetUserInfoSession(new GameSessionData
             {

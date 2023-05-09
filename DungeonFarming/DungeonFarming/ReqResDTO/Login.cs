@@ -13,5 +13,5 @@ public class LoginRequest
 public class LoginResponse : ResponseBase
 {
     public String token { get; set; }
-    public List<UserItem> userItems { get; set; } = new();
+    public List<UserItem>? userItems { get; set; } = new();
 }

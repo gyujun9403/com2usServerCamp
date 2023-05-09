@@ -8,8 +8,8 @@ namespace DungeonFarming.DataBase.AccountDb
 {
     public class MysqlAccountDb : IAccountDb
     {
-        private ILogger<MysqlAccountDb> _logger;
-        QueryFactory _db;
+        readonly ILogger<MysqlAccountDb> _logger;
+        readonly QueryFactory _db;
         public MysqlAccountDb(IConfiguration config, ILogger<MysqlAccountDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Account");
@@ -29,7 +29,8 @@ namespace DungeonFarming.DataBase.AccountDb
                     hashed_password = model.hashed_password,
                 });
                 Int16 id = await _db.Query("user_accounts").Select("pk_id").Where("user_id", model.user_id).FirstOrDefaultAsync<Int16>();
-                _logger.ZLogInformation($"[GetAccountInfo] Info : {model.user_id}");
+                //_logger.ZLogInformation($"[GetAccountInfo] Info : {model.user_id}");
+                _logger.ZLogInformationWithPayload(LogEventId.AccountDb, new { userId = model.user_id }, "RegisteUser SUCCESS");
                 return (ErrorCode.None, id);
             }
             catch (MySqlException ex)
@@ -58,10 +59,11 @@ namespace DungeonFarming.DataBase.AccountDb
                 if (rt.pk_id == null || rt.user_id == ""
                     || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
                 {
-                    _logger.ZLogError($"[GetAccountInfo] Error : {userId} Invalid Id");
+                    //_logger.ZLogError($"[GetAccountInfo] Error : {userId} Invalid Id");
+                    _logger.ZLogWarningWithPayload(LogEventId.AccountDb, new { userId = userId }, "GetAccountInfo Invalid Id FAIL");
                     return (ErrorCode.InvalidId, null);
                 }
-                _logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
+                //_logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
 
                 return (ErrorCode.None, rt);
             }
@@ -76,6 +78,8 @@ namespace DungeonFarming.DataBase.AccountDb
                 return (ErrorCode.AccountDbError, null);
             }
         }
+
+        /* 계성 삭제는 일단 구현하지 않기.
         public async Task<ErrorCode> DeleteAccount(string userId)
         {
             try
@@ -106,5 +110,6 @@ namespace DungeonFarming.DataBase.AccountDb
                 return ErrorCode.AccountDbError;
             }
         }
+        */
     }
 }
