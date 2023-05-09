@@ -59,6 +59,10 @@ namespace DungeonFarming.DataBase.GameDb
             else if (log.last_login_date < DateTime.Today.AddHours(6))
             {
                 renewalLastLoginCount += 1;
+                if (renewalLastLoginCount > 30)
+                {
+                    renewalLastLoginCount = 1;
+                }
             }
             return new LoginLog
             {
