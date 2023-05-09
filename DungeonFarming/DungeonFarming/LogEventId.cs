@@ -12,7 +12,6 @@
         public static readonly EventId Notice = new EventId(7, "Notice");
         public static readonly EventId PackagePurchase = new EventId(8, "PackagePurchase");
 
-
         // Db 이벤트 id : 101 ~ 200
         public static readonly EventId AccountDb = new EventId(101, "AccountDb");
         public static readonly EventId GameSessionDb = new EventId(102, "GameSessionDb");

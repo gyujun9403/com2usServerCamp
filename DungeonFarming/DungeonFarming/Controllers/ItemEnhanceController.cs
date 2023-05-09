@@ -44,13 +44,7 @@ namespace DungeonFarming.Controllers
             {
                 return ErrorCode.InvalidItemId;
             }
-            var attrubute = _masterDataOffer.getItemAttrubute(itemDefine.attribute);
-            if (attrubute == null)
-            {
-                return ErrorCode.InvalidItemId;
-            }
-            // TODO: 최대 강화 횟수를 보고 판단 할 것.
-            if (attrubute.enhancementable != 1)
+            if (itemDefine.enhance_max_count == 0)
             {
                 return ErrorCode.EnhancementUnavailable;
             }
@@ -78,13 +72,14 @@ namespace DungeonFarming.Controllers
         {
             if (DetermineSuccess(30) == false)
             {
-                // 강화시 수치를 떨구면 여기서
+                // 강화시 수치를 떨구면 여기서 작성 할 것.
                 return (ErrorCode.EnhancementFail, userItem);
             }
             userItem.enhance_count++;
-            userItem.attack = (Int32)((double)userItem.attack + userItem.attack * 0.1);
-            userItem.magic = (Int32)((double)userItem.magic + userItem.magic * 0.1);
-            userItem.defence = (Int32)((double)userItem.defence + userItem.defence * 0.1);
+            //TODO: 강화 증가 비율도 표에서 가지고 오게?
+            userItem.attack += Math.Max(1, (int)Math.Ceiling(userItem.attack * 0.1));
+            userItem.magic += Math.Max(1, (int)Math.Ceiling(userItem.magic * 0.1));
+            userItem.defence += Math.Max(1, (int)Math.Ceiling(userItem.defence * 0.1));
             return (ErrorCode.EnhancementSucess, userItem);
         }
 
@@ -99,26 +94,21 @@ namespace DungeonFarming.Controllers
                 _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userId = request.userId }, "pk id get FAIL");
                 return response;
             }
-            // 요청한 아이템 가져옴
             var (rtErrorCode, userItem) = await _gameDb.GetUserItem(userPkId, request.itemId);
             if (rtErrorCode != ErrorCode.None || userItem == null)
             {
                 response.errorCode = rtErrorCode;
-                // 인터페이스 대로 따라가는 클라에서 잘못된 id번호를 요청하는 것도 쉽게 발생 할 수 없는 에러이므로
-                _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, ErrorCode = response.errorCode }, "userItem get FAIL");
+                _logger.ZLogWarningWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, ErrorCode = response.errorCode }, "userItem get FAIL");
                 return response;
             }
-            // 아이템이 강화 가능한지, 현재 강화 스택에 맞는지 확인
+
             response.errorCode = CheckItemEnhancable(request.enhancementCount, userItem);
             if (response.errorCode != ErrorCode.None)
             {
                 _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, ErrorCode = response.errorCode }, "CAN'T enhance");
                 return response;
             }
-            // 확률 계산을 함
-            (rtErrorCode, userItem) = DoItemEnhancement(userItem);
-            response.errorCode = rtErrorCode;
-            // 계산 후 결과를 DB에 저장
+            (response.errorCode, userItem) = DoItemEnhancement(userItem);
             rtErrorCode = await _gameDb.UpdateUserItem(userItem);
             if (rtErrorCode != ErrorCode.None)
             {
@@ -128,7 +118,6 @@ namespace DungeonFarming.Controllers
             }
             response.itemId = userItem.item_id;
             response.userItems = userItem;
-            // 결과를 클라에 전송.
             _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, isSuccess = response.errorCode}, "item enhancement try complete");
             return response;
         }
