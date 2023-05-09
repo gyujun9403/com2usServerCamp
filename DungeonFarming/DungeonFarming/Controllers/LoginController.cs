@@ -4,6 +4,7 @@ using DungeonFarming.DataBase.GameDb.GameUserDataORM;
 using DungeonFarming.DataBase.GameSessionDb;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using ZLogger;
 
 namespace DungeonFarming.Controllers
 {
@@ -15,12 +16,15 @@ namespace DungeonFarming.Controllers
         readonly IGameSessionDb _gameSessionDb;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        public LoginController(IConfiguration config, IGameSessionDb gameSessionDb, IGameDb gameDb, IAccountDb accountDb, IMasterDataOffer masterDataOffer)
+        readonly ILogger<LoginController> _logger;
+        public LoginController(ILogger<LoginController> logger, IMasterDataOffer masterDataOffer,
+            IGameSessionDb gameSessionDb, IGameDb gameDb, IAccountDb accountDb)
         {
-            _accountDb = accountDb;
+            _logger = logger;
+            _masterDataOffer = masterDataOffer;
             _gameSessionDb = gameSessionDb;
             _gameDb = gameDb;
-            _masterDataOffer = masterDataOffer;
+            _accountDb = accountDb;
         }
 
         private Mail ReGenerateLoginRewardMail(LoginLog log, List<ItemBundle>? itemBundle) 
@@ -60,31 +64,32 @@ namespace DungeonFarming.Controllers
             LoginResponse response = new LoginResponse();
 
             // 계정 정보 가져오고 확인
-            (ErrorCode errorCode, UserAccountDto? userAccountTuple) rt = await _accountDb.GetAccountInfo(request.userId);
-            if (rt.errorCode != ErrorCode.None)
+            var (rtErrorCode, userAccountTuple) = await _accountDb.GetAccountInfo(request.userId);
+            if (rtErrorCode != ErrorCode.None)
             {
-                response.errorCode = rt.errorCode;
-                // Todo:logger
+                response.errorCode = rtErrorCode;
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = rtErrorCode }, "Account db FAIL");
                 return response;
             }
-            if (rt.userAccountTuple == null)
+            else if (userAccountTuple == null)
             {
                 response.errorCode = ErrorCode.ServerError;
-                // Todo:logger
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId}, "Account db userAccountTuple null FAIL");
                 return response;
             }
-            if (!rt.userAccountTuple.pk_id.HasValue)
+            else if (!userAccountTuple.pk_id.HasValue)
             {
                 response.errorCode = ErrorCode.ServerError;
-                // Todo:logger
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId }, "Account db pk id null FAIL");
                 return response;
             }
 
             // 비밀번호 확인
-            if (Security.VerifyHashedPassword(request.password, rt.userAccountTuple.salt,
-                    rt.userAccountTuple.hashed_password) == false)
+            if (Security.VerifyHashedPassword(request.password, userAccountTuple.salt,
+                    userAccountTuple.hashed_password) == false)
             {
                 response.errorCode = ErrorCode.WorngPassword;
+                _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId}, "login password FAIL");
                 return response;
             }
 
@@ -93,7 +98,7 @@ namespace DungeonFarming.Controllers
             response.errorCode = await _gameSessionDb.SetUserInfoSession(new GameSessionData
             {
                 userId = request.userId,
-                pkId = rt.userAccountTuple.pk_id.Value,
+                pkId = userAccountTuple.pk_id.Value,
                 token = token,
                 userStatus = UserStatus.Login
                 // TODO: 게임 기능이 추가되면, 스테이지/몬스터 등의 게임 상태도 추가 할 것.
@@ -101,22 +106,27 @@ namespace DungeonFarming.Controllers
             if (response.errorCode != ErrorCode.None)
             {
                 // TODO: 토큰 입력 실패시 account db에서 유저 정보 삭제 하는 기능 필요할듯?
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId , errorCode = response.errorCode }, "Account Session write FAIL");
             }
             response.token = token;
 
             // 게임 DB
             // 1. 유저 접속 기록을 갱신
-            (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(rt.userAccountTuple.pk_id.Value);
+            (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(userAccountTuple.pk_id.Value);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.AreadyLogin) 
             {
-                // TODO: logger
-                response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog Update and Get FAIL");
                 return response;
+            }
+            else if (response.errorCode == ErrorCode.AreadyLogin)
+            {
+                _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "User Login request AGAIN");
+                // return response; ->  아이템 목록을 보내주긴 해야하므로 아래로 진행
             }
             if (loginLog == null)
             {
-                // TODO: logger
                 response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog is NULL");
                 return response;
             }
             // 로그인 보너스 지급
@@ -124,18 +134,25 @@ namespace DungeonFarming.Controllers
             {
                 List<ItemBundle>? reward = _masterDataOffer.getDailyLoginRewardItemBundles(loginLog.consecutive_login_count);
                 response.errorCode = await _gameDb.SendMail(ReGenerateLoginRewardMail(loginLog, reward));
+                if (response.errorCode != ErrorCode.None)
+                {
+                    _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, loginLog = loginLog, reward = reward, errorCode = response.errorCode }, "Loginlog SendMail FAIL");
+                    return response; ;
+                }
             }
             // 2. 유저 장비 정보를 가져옴
-            var (errorCode, userItems) = await _gameDb.GetUserItemList(rt.userAccountTuple.pk_id.Value);
-            if (errorCode != ErrorCode.None)
+            (response.errorCode, var userItems) = await _gameDb.GetUserItemList(userAccountTuple.pk_id.Value);
+            if (response.errorCode != ErrorCode.None)
             {
                 // TOOD : log
                 response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog GetUserItemList FAIL");
+                return response;
             }
-            response.userItems = userItems;
- 
             // 3. 유저의 인벤토리 정보를 전송.
             //            List<UserItem> userItems
+            response.userItems = userItems;
+            _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId}, "Login SUCCESS");
             return response;
         }
     }

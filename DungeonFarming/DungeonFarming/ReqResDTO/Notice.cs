@@ -4,5 +4,5 @@
 
 public class NoticeResponse : ResponseBase
 {
-    public String notice { get; set; }
+    public String? notice { get; set; }
 }

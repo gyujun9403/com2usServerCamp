@@ -21,13 +21,13 @@ namespace DungeonFarming.Controllers
         {
             LogoutResponse response = new LogoutResponse();
             response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userId);
-            if (response.errorCode == ErrorCode.None)
+            if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogInformation($"[Logout] Info : body.user_id - Logout");
+                _logger.ZLogErrorWithPayload(LogEventId.Logout, new { userid = request.userId, ErrorCode = response.errorCode }, "user logout FAIL");
             }
             else
             {
-                _logger.ZLogError($"[Logout] Error : body.user_id - {response.errorCode}");
+                _logger.ZLogInformationWithPayload(LogEventId.Logout, new { userid = request.userId }, "user logout Success");
             }
 
             return response;

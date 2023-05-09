@@ -22,19 +22,6 @@ namespace DungeonFarming.DataBase.PurchaseDb
             _logger = logger;
             _masterDataOffer = masterDataOffer;
         }
-
-        //
-        private ErrorCode MysqlExceptionHandle(String configString, MySqlException ex)
-        {
-            if (ex.Number == 1062) //duplicated id exception
-            {
-                _logger.ZLogError($"[GetAccountInfo] Error : {configString} duplicate key exception");
-                return ErrorCode.DuplicatedId;
-            }
-            // 다른 예외처리 들을 추가.
-            _logger.ZLogError($"[GetAccountInfo] Error : {configString} duplicate key exception");
-            return ErrorCode.AccountDbError;
-        }
         public async Task<ErrorCode> CheckPurchaseDuplicated(string purchaseToken)
         {
             try
@@ -50,10 +37,15 @@ namespace DungeonFarming.DataBase.PurchaseDb
             }
             catch (MySqlException ex)
             {
-                return MysqlExceptionHandle("purchaseError", ex);
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "CheckPurchaseDuplicated MySqlException");
+                return ErrorCode.purchaseDbError;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "CheckPurchaseDuplicated MySqlException");
+                return ErrorCode.purchaseDbError;
             }
         }
-
         public async Task<ErrorCode> WritePurchase(long userId, string purchaseToken, short packageCode)
         {
             try
@@ -69,7 +61,13 @@ namespace DungeonFarming.DataBase.PurchaseDb
             }
             catch (MySqlException ex)
             {
-                return MysqlExceptionHandle(userId.ToString(), ex);
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "WritePurchase MySqlException");
+                return ErrorCode.purchaseDbError;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "WritePurchase MySqlException");
+                return ErrorCode.purchaseDbError;
             }
         }
     }

@@ -4,6 +4,7 @@ using DungeonFarming.DataBase.GameDb.MasterData;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZLogger;
 
 namespace DungeonFarming.Controllers
 {
@@ -48,6 +49,7 @@ namespace DungeonFarming.Controllers
             {
                 return ErrorCode.InvalidItemId;
             }
+            // TODO: 최대 강화 횟수를 보고 판단 할 것.
             if (attrubute.enhancementable != 1)
             {
                 return ErrorCode.EnhancementUnavailable;
@@ -94,33 +96,40 @@ namespace DungeonFarming.Controllers
             if (userPkId < 0)
             {
                 response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userId = request.userId }, "pk id get FAIL");
                 return response;
             }
             // 요청한 아이템 가져옴
             var (rtErrorCode, userItem) = await _gameDb.GetUserItem(userPkId, request.itemId);
             if (rtErrorCode != ErrorCode.None || userItem == null)
             {
-                response.errorCode = ErrorCode.ServerError;
+                response.errorCode = rtErrorCode;
+                // 인터페이스 대로 따라가는 클라에서 잘못된 id번호를 요청하는 것도 쉽게 발생 할 수 없는 에러이므로
+                _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, ErrorCode = response.errorCode }, "userItem get FAIL");
                 return response;
             }
             // 아이템이 강화 가능한지, 현재 강화 스택에 맞는지 확인
             response.errorCode = CheckItemEnhancable(request.enhancementCount, userItem);
             if (response.errorCode != ErrorCode.None)
             {
+                _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, ErrorCode = response.errorCode }, "CAN'T enhance");
                 return response;
             }
             // 확률 계산을 함
             (rtErrorCode, userItem) = DoItemEnhancement(userItem);
+            response.errorCode = rtErrorCode;
             // 계산 후 결과를 DB에 저장
             rtErrorCode = await _gameDb.UpdateUserItem(userItem);
             if (rtErrorCode != ErrorCode.None)
             {
-                response.errorCode = ErrorCode.ServerError;
+                response.errorCode = rtErrorCode;
+                _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
                 return response;
             }
             response.itemId = userItem.item_id;
             response.userItems = userItem;
             // 결과를 클라에 전송.
+            _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, isSuccess = response.errorCode}, "item enhancement try complete");
             return response;
         }
     }

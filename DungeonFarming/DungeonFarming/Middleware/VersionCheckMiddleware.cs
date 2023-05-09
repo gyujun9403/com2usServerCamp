@@ -18,7 +18,7 @@ namespace DungeonFarming.Middleware
         public async Task Invoke(HttpContext context)
         {
             String path = context.Request.Path;
-            if (!(path.StartsWith("/Registe")))
+            if (!(path.StartsWith("/Regist")))
             {
                 context.Request.EnableBuffering();
                 using (var streamReader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))

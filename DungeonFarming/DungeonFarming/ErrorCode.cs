@@ -9,6 +9,7 @@ public enum ErrorCode : Int16
     ServerError = 3,
     InvalidBodyForm = 4,
     GameDbError = 5,
+    purchaseDbError = 6,
 
     // Auth 10 ~ 99
     //  ID : 10 ~ 19, Token : 20 ~ 29, Password : 30 ~ 39
@@ -24,9 +25,12 @@ public enum ErrorCode : Int16
     WorngClientVersion = 40,
     WorngMasterDataVersion = 41,
 
+
     // MAIL : 50 ~ 59
     InvalidMailId = 50,
     InvalidMailPage = 51,
+    Noitems = 52,
+    NoMail = 53,
 
     // Purchase : 60 ~ 69
     InvalidPurchaseToken = 60,
@@ -39,4 +43,8 @@ public enum ErrorCode : Int16
     EnhancementUnavailable = 72,
     MaxEnhancementLevelExceeded = 73,
     InvalidEnhancementCount = 74,
+
+
+    // Item : 80 ~ 89
+    ItemCountExceeded = 81,
 }

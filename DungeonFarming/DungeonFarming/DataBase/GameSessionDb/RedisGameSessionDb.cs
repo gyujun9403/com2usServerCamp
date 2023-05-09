@@ -32,16 +32,14 @@ namespace DungeonFarming.DataBase.GameSessionDb
                 var result = await redisString.GetAndDeleteAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogError($"[delete UserInfo Session] Error : {userId}, Invalid Id");
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userId = userId }, "DeleteUserInfoSession Invalid Id FAIL");
                     return ErrorCode.InvalidToken;
                 }
-                _logger.ZLogInformation($"[delete UserInfo Session] Info : {userId}");
-
                 return ErrorCode.None;
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[delete UserInfo Session] Error : {userId} {ex.Message}");
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userId = userId }, "DeleteUserInfoSession EXCEPTION");
                 return ErrorCode.GameSessionDbError;
             }
         }
@@ -55,16 +53,14 @@ namespace DungeonFarming.DataBase.GameSessionDb
                 var result = await redisString.GetAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogError($"[get UserInfo Session] Error : {userId}, Invalid Id");
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userId = userId }, "GetUserInfoSession Invalid Id FAIL");
                     return (ErrorCode.InvalidId, null);
                 }
-                _logger.ZLogInformation($"[set UserInfo Session] Info : {userId}");
-
                 return (ErrorCode.None, result.Value);
             }
             catch(Exception ex)
             {
-                _logger.ZLogError($"[get UserInfo Session] Error : {userId} {ex.Message}");
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userId = userId }, "GetUserInfoSession EXCEPTION");
                 return (ErrorCode.GameSessionDbError, null);
             }
         }
@@ -75,22 +71,43 @@ namespace DungeonFarming.DataBase.GameSessionDb
             {
                 var keyString = GenerateUserInfoSessionKey(userInfo.userId);
                 var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
-                await redisString.SetAsync(userInfo, TimeSpan.FromHours(1));
-                _logger.ZLogInformation($"[set UserInfo Session] Info : {userInfo.userId}");
-                return ErrorCode.None;
+                if (await redisString.SetAsync(userInfo, TimeSpan.FromHours(1)) == true)
+                {
+                    return ErrorCode.None;
+                }
+                else
+                {
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { session = userInfo }, "SetUserInfoSession Session Set FAIL");
+                    return ErrorCode.GameSessionDbError;
+                }
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[set UserInfo Session] Error : {userInfo.userId} {ex.Message}");
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { session = userInfo }, "SetUserInfoSession EXCEPTION");
                 return ErrorCode.GameSessionDbError;
             }
         }
 
-        public async Task<string> GetNotice()
+        public async Task<(ErrorCode, string?)> GetNotice()
         {
-            var redisString = new RedisString<String>(_redisConnection, "notice", null);
-            var result = await redisString.GetAsync();
-            return result.Value;
+            String? result = null;
+            try
+            {
+                var redisString = new RedisString<String>(_redisConnection, "notice", null);
+                var residResult = await redisString.GetAsync();
+                if (residResult.HasValue == false)
+                {
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { }, "GetNotice FAIL");
+                    return (ErrorCode.GameSessionDbError, null);
+                }
+                result = residResult.Value;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { }, "GetNotice EXCEPTION");
+                return (ErrorCode.GameSessionDbError, null);
+            }
+            return (ErrorCode.None, result);
         }
     }
 }

@@ -18,71 +18,6 @@ namespace DungeonFarming.DataBase.AccountDb
             _db = new QueryFactory(connection, compiler);
             _logger = logger;
         }
-
-        private ErrorCode MysqlExceptionHandle(String user_id, MySqlException ex)
-        {
-            if (ex.Number == 1062) //duplicated id exception
-            {
-                _logger.ZLogError($"[GetAccountInfo] Error : {user_id} duplicate key exception");
-                return ErrorCode.DuplicatedId;
-            }
-            _logger.ZLogError($"[GetAccountInfo] Error : {user_id} duplicate key exception");
-            return ErrorCode.AccountDbError;
-        }
-
-        public async Task<ErrorCode> DeleteAccount(string userId)
-        {
-            try
-            {
-                if (await _db.Query("user_accounts").Where("user_id", userId).ExistsAsync())
-                {
-                    await _db.Query("user_accounts").Where("user_id", userId).DeleteAsync();
-                    _logger.ZLogInformation($"[DeleteAccount] Info : {userId}");
-                    return ErrorCode.None;
-                }
-                _logger.ZLogError($"[DeleteAccount] Error : {userId} Invalid Id");
-
-                return ErrorCode.InvalidId;
-            }
-            catch (MySqlException ex)
-            {
-                return MysqlExceptionHandle(userId, ex);
-            }
-            catch (Exception ex)
-            {
-                _logger.ZLogError($"[DeleteAccount] Error : {userId} {ex.Message}");
-                return ErrorCode.AccountDbError;
-            }
-        }
-
-        public async Task<(ErrorCode, UserAccountDto?)> GetAccountInfo(string userId)
-        {
-            try
-            {
-                var rt = await _db.Query("user_accounts")
-                    .Select("pk_id", "user_id", "salt", "hashed_password")
-                    .Where("user_id", userId).FirstAsync<UserAccountDto>();
-                if (rt.pk_id == null || rt.user_id == "" 
-                    || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
-                {
-                    _logger.ZLogError($"[GetAccountInfo] Error : {userId} Invalid Id");
-                    return (ErrorCode.InvalidId, null);
-                }
-                _logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
-
-                return (ErrorCode.None, rt);
-            }
-            catch (MySqlException ex)
-            {
-                return (MysqlExceptionHandle(userId, ex), null);
-            }
-            catch (Exception ex)
-            {
-                _logger.ZLogError($"[GetAccountInfo] Error : {userId} {ex.Message}");
-                return (ErrorCode.AccountDbError, null);
-            }
-        }
-
         public async Task<(ErrorCode, Int16)> RegisteUser(UserAccountDto model)
         {
             try
@@ -99,14 +34,77 @@ namespace DungeonFarming.DataBase.AccountDb
             }
             catch (MySqlException ex)
             {
-                return (MysqlExceptionHandle(model.user_id, ex), -1);
+                if (ex.Number == 1062) //duplicated id exception
+                {
+                    _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = model.user_id }, "RegisteUser duplicated id EXCEPTION");
+                    return (ErrorCode.DuplicatedId, -1);
+                }
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = model.user_id }, "RegisteUser MYSQL_EXCEPTION");
+                return (ErrorCode.AccountDbError, -1);
             }
             catch (Exception ex)
             {
-                _logger.ZLogError($"[GetAccountInfo] Error : {model.user_id} {ex.Message}");
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = model.user_id }, "RegisteUser EXCEPTION");
                 return (ErrorCode.AccountDbError, -1);
             }
+        }
+        public async Task<(ErrorCode, UserAccountDto?)> GetAccountInfo(string userId)
+        {
+            try
+            {
+                var rt = await _db.Query("user_accounts")
+                    .Select("pk_id", "user_id", "salt", "hashed_password")
+                    .Where("user_id", userId).FirstAsync<UserAccountDto>();
+                if (rt.pk_id == null || rt.user_id == ""
+                    || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
+                {
+                    _logger.ZLogError($"[GetAccountInfo] Error : {userId} Invalid Id");
+                    return (ErrorCode.InvalidId, null);
+                }
+                _logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
 
+                return (ErrorCode.None, rt);
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = userId }, "GetAccountInfo MYSQL_EXCEPTION");
+                return (ErrorCode.AccountDbError, null);
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = userId }, "GetAccountInfo EXCEPTION");
+                return (ErrorCode.AccountDbError, null);
+            }
+        }
+        public async Task<ErrorCode> DeleteAccount(string userId)
+        {
+            try
+            {
+                if (await _db.Query("user_accounts").Where("user_id", userId).ExistsAsync())
+                {
+                    await _db.Query("user_accounts").Where("user_id", userId).DeleteAsync();
+                    _logger.ZLogInformation($"[DeleteAccount] Info : {userId}");
+                    return ErrorCode.None;
+                }
+                _logger.ZLogError($"[DeleteAccount] Error : {userId} Invalid Id");
+
+                return ErrorCode.InvalidId;
+            }
+            catch (MySqlException ex)
+            {
+                if (ex.Number == 1062) //duplicated id exception
+                {
+                    _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = userId }, "DeleteAccount duplicated id EXCEPTION");
+                    return ErrorCode.DuplicatedId;
+                }
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = userId }, "DeleteAccount MYSQL_EXCEPTION");
+                return ErrorCode.AccountDbError;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.AccountDb, ex, new { userId = userId }, "DeleteAccount EXCEPTION");
+                return ErrorCode.AccountDbError;
+            }
         }
     }
 }
