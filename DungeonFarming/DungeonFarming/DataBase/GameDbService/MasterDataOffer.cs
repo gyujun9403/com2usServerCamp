@@ -3,6 +3,7 @@ using DungeonFarming.DataBase.GameDb.MasterData;
 using MySqlConnector;
 using SqlKata.Compilers;
 using SqlKata.Execution;
+using ZLogger;
 
 namespace DungeonFarming.DataBase.GameDb
 {
@@ -169,7 +170,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             catch (MySqlException ex)
             {
-                //Todo: Logger
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadDailyLoginRewards MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadDailyLoginRewards Exception");
                 return false;
             }
         }
@@ -187,7 +193,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             catch (MySqlException ex)
             {
-                //Todo: Logger
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadItemAttributes MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadItemAttributes Exception");
                 return false;
             }
         }
@@ -212,7 +223,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             catch (MySqlException ex)
             {
-                //Todo: Logger
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadPackage MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadPackage Exception");
                 return false;
             }
         }
@@ -230,7 +246,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             catch (MySqlException ex)
             {
-                //Todo: Logger
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadDefaultItemLists MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadDefaultItemLists Exception");
                 return false;
             }
         }
@@ -248,7 +269,12 @@ namespace DungeonFarming.DataBase.GameDb
             }
             catch (MySqlException ex)
             {
-                //Todo: Logger
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadItemDefines MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadItemDefines Exception");
                 return false;
             }
         }

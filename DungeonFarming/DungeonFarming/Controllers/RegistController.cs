@@ -9,18 +9,21 @@ namespace DungeonFarming.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class RegisteController : ControllerBase
+    public class RegistController : ControllerBase
     {
         readonly IAccountDb _accountDb;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        readonly ILogger<RegisteController> _logger;
-        public RegisteController(IAccountDb accountDb, IGameDb gameDb, ILogger<RegisteController> logger)
+        readonly ILogger<RegistController> _logger;
+        public RegistController(IAccountDb accountDb, IGameDb gameDb, IMasterDataOffer masterDataOffer, ILogger<RegistController> logger)
         {
             _accountDb = accountDb;
             _gameDb = gameDb;
+            _masterDataOffer = masterDataOffer;
             _logger = logger;
         }
+
+        //TODO:void RollBackUserAccount
 
         [HttpPost()]
         public async Task<RegisterResponse> Registration(RegisteRequest request)
@@ -37,14 +40,15 @@ namespace DungeonFarming.Controllers
             response.errorCode = errorCode;
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogInformation($"[Registration] Info : {request.userId} - Regist");
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId , ErrorCode = response.errorCode }, "Registration FAIL");
                 return response;
             }
 
             // 0. GameDb에 유저를 등록한다.
             if (await _gameDb.RegistGameUser(pkId) != ErrorCode.None)
             {
-                _logger.ZLogError($"[Registration] Error : {request.userId} - RegistUserInGame");
+                //_logger.ZLogError($"[Registration] Error : {request.userId} - RegistUserInGame");
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb regist FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
@@ -54,17 +58,18 @@ namespace DungeonFarming.Controllers
             var itemBundle = _masterDataOffer.getDefaultItemBundles(0);
             if (itemBundle == null)
             {
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { listCode = 0 }, "default item bundle load FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
             // 2. 유저의 인벤토리에 기본 지급 아이템들을 지급한다.
-            if (await _gameDb.SetUserItemsByItemBundles(pkId, itemBundle) != ErrorCode.None)
+            if (await _gameDb.InsertUserItemsByItemBundles(pkId, itemBundle) != ErrorCode.None)
             {
-                _logger.ZLogError($"[Registration] Error : {request.userId} - SetItemListInUserInventory");
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "User Regist Item setting FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
-            _logger.ZLogError($"[Registration] Error : {request.userId} - {response.errorCode}");
+            _logger.ZLogInformationWithPayload(LogEventId.Regist, new { userId = request.userId }, "User Regist SUCCESS");
             return response;
         }
     }

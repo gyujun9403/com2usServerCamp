@@ -4,6 +4,7 @@ using DungeonFarming.DataBase.PurchaseDb;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ZLogger;
 
 namespace DungeonFarming.Controllers
 {
@@ -83,12 +84,14 @@ namespace DungeonFarming.Controllers
             if (userPkId < 0)
             {
                 response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId }, "PackagePurchase pk id get FAIL");
                 return response;
             }
             // 영수증 유효성 확인
             if (CheckPurchaseValid(request.purchaseToken) == false)
             {
                 response.errorCode = ErrorCode.InvalidPurchaseToken;
+                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token INVALID");
                 return response;
             }
             // 영수증 중복 확인
@@ -96,6 +99,7 @@ namespace DungeonFarming.Controllers
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = rtErrorCode;
+                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token DUPLICATED");
                 return response;
             }
             // 패키지 번호 확인
@@ -103,6 +107,7 @@ namespace DungeonFarming.Controllers
             if (itemBundle == null)
             {
                 response.errorCode = ErrorCode.InvalidPackageId;
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase package id INVALID");
                 return response;
             }
             // 구매 내역 입력
@@ -110,14 +115,17 @@ namespace DungeonFarming.Controllers
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = rtErrorCode;
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase purchase db write FAIL");
                 return response;
             }
             // 유저에게 메일로 전송
             response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(userPkId, request.packageCode, itemBundle));
-            if (response.errorCode == ErrorCode.None)
+            if (response.errorCode != ErrorCode.None)
             {
-                response.packageListId = request.packageCode;
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase mail send FAIL");
+                return response;
             }
+            response.packageListId = request.packageCode;
             return response;
         }
     }
