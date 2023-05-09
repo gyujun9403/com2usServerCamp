@@ -4,6 +4,7 @@ using ZLogger;
 using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.PurchaseDb;
+using DungeonFarming;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,11 @@ builder.Services.AddSingleton<IMasterDataOffer, MasterDataOffer>();
 
 var app = builder.Build();
 var masterDataOffer = app.Services.GetRequiredService<IMasterDataOffer>();
-masterDataOffer.LoadMasterDatas();
+if (masterDataOffer.LoadMasterData() == false)
+{ 
+    app.Logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, new { }, "LoadMasterDatas FAIL");
+    Environment.Exit(-1);
+}
 app.MapControllers();
 app.UseMiddleware<VersionCheckMiddleware>();
 app.UseMiddleware<AuthCheckMiddleware>();

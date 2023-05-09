@@ -1,18 +1,21 @@
 ﻿using DungeonFarming.DataBase.GameSessionDb;
 using System.Text;
 using System.Text.Json;
+using ZLogger;
 
 namespace DungeonFarming.Middleware
 {
     public class AuthCheckMiddleware
     {
-        private RequestDelegate _next;
-        private IGameSessionDb _gameSessionDb;
+        readonly RequestDelegate _next;
+        readonly IGameSessionDb _gameSessionDb;
+        readonly ILogger<AuthCheckMiddleware> _logger;
 
-        public AuthCheckMiddleware(RequestDelegate next, IGameSessionDb gameSessionDb)
+        public AuthCheckMiddleware(RequestDelegate next, IGameSessionDb gameSessionDb, ILogger<AuthCheckMiddleware> logger)
         {
             _next = next;
             _gameSessionDb = gameSessionDb;
+            _logger = logger;
         }
         public async Task Invoke(HttpContext context)
         {
@@ -45,6 +48,7 @@ namespace DungeonFarming.Middleware
         {
             if (String.IsNullOrEmpty(body))
             {
+                _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http Body NULLorEMPTY");
                 await SetContext(context, 400, ErrorCode.InvalidBodyForm);
                 return (null, null);
             }
@@ -53,6 +57,7 @@ namespace DungeonFarming.Middleware
                 var doc = JsonDocument.Parse(body);
                 if (doc == null)
                 {
+                    _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http Body UNPARSINGABLE");
                     await SetContext(context, 400, ErrorCode.InvalidBodyForm);
                     return (null, null);
                 }
@@ -67,11 +72,13 @@ namespace DungeonFarming.Middleware
             }
             catch(FormatException ex)
             {
+                _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, Exception = ex }, "Http Body FormatEXCEPTION");
                 await SetContext(context, 400, ErrorCode.InvalidBodyForm);
                 return (null, null);
             }
             catch
             {
+                _logger.ZLogErrorWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http SERVERERROR");
                 await SetContext(context, 500, ErrorCode.ServerError);
                 return (null, null);
             }
@@ -82,11 +89,13 @@ namespace DungeonFarming.Middleware
             var (errorCode, userInfo) = await _gameSessionDb.GetUserInfoSession(userId);
             if (errorCode != ErrorCode.None || userInfo == null)
             {
+                _logger.ZLogErrorWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, ErrorCode = errorCode }, "Session FAIL");
                 await SetContext(context, 400, errorCode);
                 return false;
             }
             if (userInfo.token != inputToken)
             {
+                _logger.ZLogInformationWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, userId = userId }, "Token Check FAIL");
                 await SetContext(context, 400, ErrorCode.InvalidToken);
                 return false;
             }
