@@ -33,7 +33,7 @@ namespace DungeonFarming.Middleware
                     {
                         return;
                     }
-                    if (await CheckTokenAndSetHeader(context, userId, token) == false)
+                    if (await CheckTokenAndSetSessionDataInContext(context, userId, token) == false)
                     {
                         return;
                     }
@@ -84,7 +84,7 @@ namespace DungeonFarming.Middleware
             }
         }
 
-        private async Task<bool> CheckTokenAndSetHeader(HttpContext context, String userId, String inputToken)
+        private async Task<bool> CheckTokenAndSetSessionDataInContext(HttpContext context, String userId, String inputToken)
         {
             var (errorCode, userInfo) = await _gameSessionDb.GetUserInfoSession(userId);
             if (errorCode != ErrorCode.None || userInfo == null)
@@ -99,7 +99,7 @@ namespace DungeonFarming.Middleware
                 await SetContext(context, 400, ErrorCode.InvalidToken);
                 return false;
             }
-            context.Request.Headers.Add("UserPkId", userInfo.pkId.ToString());
+            context.Items["userId"] = userInfo.pkId;
             return true;
         }
 

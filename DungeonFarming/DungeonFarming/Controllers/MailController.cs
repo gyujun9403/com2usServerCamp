@@ -15,37 +15,20 @@ namespace DungeonFarming.Controllers
         readonly Int16 _mailsPerPage;
         readonly ILogger<MailController> _logger;
         readonly IGameDb _gameDb;
-        public MailController(IConfiguration config, ILogger<MailController> logger, IGameDb gameDb)
+        readonly Int64 _userId;
+        public MailController(IHttpContextAccessor httpContextAccessor, IConfiguration config, ILogger<MailController> logger, IGameDb gameDb)
         {
             _logger = logger;
             _gameDb = gameDb;
             _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
-        }
-
-        public Int64 GetUserPkId()
-        {
-            Int64 userPkId = -1;
-            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
-            {
-                if (long.TryParse(userPkIdStr, out userPkId) == false)
-                {
-                    return -1;
-                }
-            }
-            return userPkId;
+            //_userId = (long)HttpContext.Items["userId"];
+            _userId = httpContextAccessor.HttpContext.Items["userId"] as long? ?? -1;
         }
 
         [HttpPost("Preview")]
         public async Task<MailPreviewResponse> GetMailPreview(MailPreviewRequest request)
         {
             MailPreviewResponse response = new MailPreviewResponse();
-            var userPkId = GetUserPkId();
-            if (userPkId < 0)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId }, "GetMailPreview pk id get FAIL");
-                return response;
-            }
             if (request.page < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailPage;
@@ -53,7 +36,7 @@ namespace DungeonFarming.Controllers
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId, page = request.page }, "GetMailPreview invalid page");
                 return response;
             }
-            (response.errorCode, var mailPreviewList) = await _gameDb.GetMailPreviewList(userPkId, request.page * _mailsPerPage, _mailsPerPage);
+            (response.errorCode, var mailPreviewList) = await _gameDb.GetMailPreviewList(_userId, request.page * _mailsPerPage, _mailsPerPage);
             if ((response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
                 || response.errorCode != ErrorCode.NoMail && mailPreviewList == null)
             {
@@ -75,20 +58,13 @@ namespace DungeonFarming.Controllers
         public async Task<GetMailResponse> GetMail(GetMailRequest request)
         {
             GetMailResponse response = new GetMailResponse();
-            var userPkId = GetUserPkId();
-            if (userPkId < 0)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId }, "GetMail pk id get FAIL");
-                return response;
-            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId, mailId = request.mailId }, "GetMail invalid mailId");
                 return response;
             }
-            (response.errorCode, response.mail) = await _gameDb.GetMail(userPkId, request.mailId);
+            (response.errorCode, response.mail) = await _gameDb.GetMail(_userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail,
@@ -106,13 +82,6 @@ namespace DungeonFarming.Controllers
         public async Task<RecvMailItemsResponse> RecvMailItems(RecvMailItemsRequest request)
         {
             RecvMailItemsResponse response = new RecvMailItemsResponse();
-            var userPkId = GetUserPkId();
-            if (userPkId < 0)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId }, "RecvMailItems pk id get FAIL");
-                return response;
-            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
@@ -121,7 +90,7 @@ namespace DungeonFarming.Controllers
                     "RecvMailItems invalid mailId");
                 return response;
             }
-            response.errorCode = await _gameDb.RecvMailItems(userPkId, request.mailId);
+            response.errorCode = await _gameDb.RecvMailItems(_userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.Noitems)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, 
@@ -136,13 +105,6 @@ namespace DungeonFarming.Controllers
         public async Task<DeleteMailResponse> DeleteMail(DeleteMailRequest request)
         {
             DeleteMailResponse response = new DeleteMailResponse();
-            var userPkId = GetUserPkId();
-            if (userPkId < 0)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId }, "DeleteMail pk id get FAIL");
-                return response;
-            }
             if (request.mailId < 0)
             {
                 response.errorCode = ErrorCode.InvalidMailId;
@@ -151,7 +113,7 @@ namespace DungeonFarming.Controllers
                     "DeleteMail invalid mailId");
                 return response;
             }
-            response.errorCode = await _gameDb.DeleteMail(userPkId, request.mailId);
+            response.errorCode = await _gameDb.DeleteMail(_userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail,
