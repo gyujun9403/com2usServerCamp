@@ -24,7 +24,7 @@ public enum ErrorCode : Int16
     WorngPassword = 31,
     WorngClientVersion = 40,
     WorngMasterDataVersion = 41,
-
+    InvalidUserData = 42,
 
     // MAIL : 50 ~ 59
     InvalidMailId = 50,

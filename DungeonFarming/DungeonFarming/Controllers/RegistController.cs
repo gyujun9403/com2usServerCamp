@@ -23,8 +23,6 @@ namespace DungeonFarming.Controllers
             _logger = logger;
         }
 
-        //TODO:void RollBackUserAccount
-
         [HttpPost()]
         public async Task<RegisterResponse> Registration(RegisteRequest request)
         {
@@ -38,6 +36,11 @@ namespace DungeonFarming.Controllers
                 hashed_password = hashedPasswordBytes
             });
             response.errorCode = errorCode;
+            if (response.errorCode == ErrorCode.DuplicatedId)
+            {
+                _logger.ZLogInformationWithPayload(LogEventId.Regist, new { userId = request.userId }, "Registration FAIL");
+                return response;
+            }
             if (response.errorCode != ErrorCode.None)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId , ErrorCode = response.errorCode }, "Registration FAIL");
@@ -45,8 +48,9 @@ namespace DungeonFarming.Controllers
             }
 
             // 0. GameDb에 유저를 등록한다.
-            if (await _gameDb.RegistGameUser(pkId) != ErrorCode.None)
+            if (await _gameDb.RegisUserLoginLog(pkId) != ErrorCode.None)
             {
+                await _accountDb.DeleteAccount(request.userId);
                 _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb regist FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;
@@ -57,13 +61,18 @@ namespace DungeonFarming.Controllers
             var itemBundle = _masterDataOffer.getDefaultItemBundles(0);
             if (itemBundle == null)
             {
+                await _accountDb.DeleteAccount(request.userId);
+                await _gameDb.DeleteLoginLog(pkId);
                 _logger.ZLogErrorWithPayload(LogEventId.Regist, new { listCode = 0 }, "default item bundle load FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
             // 2. 유저의 인벤토리에 기본 지급 아이템들을 지급한다.
+            //지급 실패시 GameDb에 유저 제거
             if (await _gameDb.InsertUserItemsByItemBundles(pkId, itemBundle) != ErrorCode.None)
             {
+                await _accountDb.DeleteAccount(request.userId);
+                await _gameDb.DeleteLoginLog(pkId);
                 _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "User Regist Item setting FAIL");
                 response.errorCode = ErrorCode.ServerError;
                 return response;

@@ -79,7 +79,6 @@ namespace DungeonFarming.DataBase.AccountDb
             }
         }
 
-        /* 계성 삭제는 일단 구현하지 않기.
         public async Task<ErrorCode> DeleteAccount(string userId)
         {
             try
@@ -110,6 +109,5 @@ namespace DungeonFarming.DataBase.AccountDb
                 return ErrorCode.AccountDbError;
             }
         }
-        */
     }
 }

@@ -113,6 +113,7 @@ namespace DungeonFarming.Controllers
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = rtErrorCode;
+                // DeleteUserItem
                 _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
                 return response;
             }

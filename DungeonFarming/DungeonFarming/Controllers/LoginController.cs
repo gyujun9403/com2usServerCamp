@@ -112,6 +112,7 @@ namespace DungeonFarming.Controllers
 
             // 게임 DB
             // 1. 유저 접속 기록을 갱신
+            // 만약 기록이 없는 경우 새로 생성?
             (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(userAccountTuple.pk_id.Value);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.AreadyLogin) 
             {
@@ -121,7 +122,6 @@ namespace DungeonFarming.Controllers
             else if (response.errorCode == ErrorCode.AreadyLogin)
             {
                 _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "User Login request AGAIN");
-                // return response; ->  아이템 목록을 보내주긴 해야하므로 아래로 진행
             }
             if (loginLog == null)
             {
@@ -144,13 +144,10 @@ namespace DungeonFarming.Controllers
             (response.errorCode, var userItems) = await _gameDb.GetUserItemList(userAccountTuple.pk_id.Value);
             if (response.errorCode != ErrorCode.None)
             {
-                // TOOD : log
                 response.errorCode = ErrorCode.ServerError;
                 _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog GetUserItemList FAIL");
                 return response;
             }
-            // 3. 유저의 인벤토리 정보를 전송.
-            //            List<UserItem> userItems
             response.userItems = userItems;
             _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId}, "Login SUCCESS");
             return response;
