@@ -17,6 +17,7 @@ namespace DungeonFarming.Controllers
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
         readonly ILogger<LoginController> _logger;
+
         public LoginController(ILogger<LoginController> logger, IMasterDataOffer masterDataOffer,
             IGameSessionDb gameSessionDb, IGameDb gameDb, IAccountDb accountDb)
         {
@@ -27,7 +28,7 @@ namespace DungeonFarming.Controllers
             _accountDb = accountDb;
         }
 
-        private Mail ReGenerateLoginRewardMail(LoginLog log, List<ItemBundle>? itemBundle) 
+        Mail ReGenerateLoginRewardMail(LoginLog log, List<ItemBundle>? itemBundle) 
         {
             var mail = new Mail();
             mail.user_id = log.user_id;

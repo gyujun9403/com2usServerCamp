@@ -23,6 +23,7 @@ builder.Services.AddTransient<IGameDb, MysqlGameDb>();
 builder.Services.AddTransient<IPurchaseDb, MysqlPurchaseDb>();
 builder.Services.AddSingleton<IGameSessionDb, RedisGameSessionDb>();
 builder.Services.AddSingleton<IMasterDataOffer, MasterDataOffer>();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 var masterDataOffer = app.Services.GetRequiredService<IMasterDataOffer>();

@@ -13,35 +13,26 @@ namespace DungeonFarming.Controllers
     {
         readonly IGameDb _gameDb;
         readonly ILogger<DailyLoginRewardController> _logger;
-        public DailyLoginRewardController(IGameDb gameDb, ILogger<DailyLoginRewardController> logger)
+        readonly Int64 _userId;
+        public DailyLoginRewardController(IHttpContextAccessor httpContextAccessor, IGameDb gameDb, ILogger<DailyLoginRewardController> logger)
         {
             _gameDb = gameDb;
             _logger = logger;
+            _userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
         }
         [HttpPost("LoginRewardStack")]
         public async Task<LoginRewardStackResponse> LoginStack(LoginRewardStackRequst request)
         {
             LoginRewardStackResponse response = new LoginRewardStackResponse();
-            Int64 userPkId = -1;
-            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
-            {
-                if (long.TryParse(userPkIdStr, out userPkId) == false)
-                {
-                    response.errorCode = ErrorCode.GameDbError;
-                    _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { userId = request.userId }, "pk id get FAIL");
-                    return response;
-                }
-            }
-            // 토큰 가져오고 검증.
-            var (errorCode, loginlog) = await _gameDb.GetLoginLog(userPkId);
+            var (errorCode, loginlog) = await _gameDb.GetLoginLog(_userId);
             if (loginlog == null)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = userPkId }, "login log get FAIL");
+                _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = _userId }, "login log get FAIL");
                 return response;
             }
             response.loginRewardStack = loginlog.consecutive_login_count;
-            _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = userPkId }, "login reward stack send SUCCESS");
+            _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = _userId }, "login reward stack send SUCCESS");
             return response;
         }
     }

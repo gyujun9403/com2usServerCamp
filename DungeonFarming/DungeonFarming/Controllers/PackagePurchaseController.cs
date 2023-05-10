@@ -16,25 +16,15 @@ namespace DungeonFarming.Controllers
         readonly IPurchaseDb _purchaseDb;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
+        readonly Int64 _userId;
 
-        public PackagePurchaseController(ILogger<PackagePurchaseController> logger, IPurchaseDb purchaseDb, IGameDb gameDb, IMasterDataOffer masterDataOffer)
+        public PackagePurchaseController(IHttpContextAccessor httpContextAccessor, ILogger<PackagePurchaseController> logger, IPurchaseDb purchaseDb, IGameDb gameDb, IMasterDataOffer masterDataOffer)
         {
             _logger = logger;
             _purchaseDb = purchaseDb;
             _gameDb = gameDb;
             _masterDataOffer = masterDataOffer;
-        }
-        public Int64 GetUserPkId()
-        {
-            Int64 userPkId = -1;
-            if (HttpContext.Request.Headers.TryGetValue("UserPkId", out var userPkIdStr))
-            {
-                if (long.TryParse(userPkIdStr, out userPkId) == false)
-                {
-                    return -1;
-                }
-            }
-            return userPkId;
+            _userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
         }
 
         private bool CheckPurchaseValid(String purchaseToken)
@@ -80,13 +70,6 @@ namespace DungeonFarming.Controllers
         {
             PackagePurchaseResponse response = new PackagePurchaseResponse();
             response.packageListId = -1;
-            Int64 userPkId = GetUserPkId();
-            if (userPkId < 0)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId }, "PackagePurchase pk id get FAIL");
-                return response;
-            }
             // 영수증 유효성 확인
             if (CheckPurchaseValid(request.purchaseToken) == false)
             {
@@ -111,7 +94,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 구매 내역 입력
-            rtErrorCode = await _purchaseDb.WritePurchase(userPkId, request.purchaseToken, request.packageCode);
+            rtErrorCode = await _purchaseDb.WritePurchase(_userId, request.purchaseToken, request.packageCode);
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = rtErrorCode;
@@ -119,10 +102,10 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 유저에게 메일로 전송
-            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(userPkId, request.packageCode, itemBundle));
+            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(_userId, request.packageCode, itemBundle));
             if (response.errorCode != ErrorCode.None)
             {
-                await _purchaseDb.DeletePurchase(userPkId, request.purchaseToken, request.packageCode);
+                await _purchaseDb.DeletePurchase(_userId, request.purchaseToken, request.packageCode);
                 _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase mail send FAIL");
                 return response;
             }
