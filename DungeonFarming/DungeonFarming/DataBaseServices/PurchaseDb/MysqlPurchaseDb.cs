@@ -29,7 +29,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
                 var isDuplicated = await _db.Query("purchase_histories")
                     .Where("purchase_token", purchaseToken)
                     .ExistsAsync();
-                if (isDuplicated == true) 
+                if (isDuplicated == true)
                 {
                     return ErrorCode.DuplicatedPurchaseToken;
                 }
@@ -51,7 +51,8 @@ namespace DungeonFarming.DataBase.PurchaseDb
             try
             {
                 await _db.Query("purchase_histories")
-                    .InsertAsync( new { 
+                    .InsertAsync(new
+                    {
                         user_id = userId,
                         purchase_token = purchaseToken,
                         package_code = packageCode,
@@ -67,6 +68,29 @@ namespace DungeonFarming.DataBase.PurchaseDb
             catch (Exception ex)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "WritePurchase MySqlException");
+                return ErrorCode.purchaseDbError;
+            }
+        }
+
+        public async Task<ErrorCode> DeletePurchase(long userId, string purchaseToken, short packageCode)
+        {
+            try
+            {
+                await _db.Query("purchase_histories")
+                .Where("user_id", userId)
+                .Where("purchase_token", purchaseToken)
+                .Where("package_code", packageCode)
+                .DeleteAsync();
+                return ErrorCode.None;
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "DeletePurchase MySqlException");
+                return ErrorCode.purchaseDbError;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.PurchaseDb, ex, new { purchaseToken = purchaseToken }, "DeletePurchase MySqlException");
                 return ErrorCode.purchaseDbError;
             }
         }

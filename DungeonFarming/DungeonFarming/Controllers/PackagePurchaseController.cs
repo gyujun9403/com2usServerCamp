@@ -122,6 +122,7 @@ namespace DungeonFarming.Controllers
             response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(userPkId, request.packageCode, itemBundle));
             if (response.errorCode != ErrorCode.None)
             {
+                await _purchaseDb.DeletePurchase(userPkId, request.purchaseToken, request.packageCode);
                 _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase mail send FAIL");
                 return response;
             }

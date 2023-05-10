@@ -6,9 +6,10 @@ namespace DungeonFarming.DataBase.GameDb
     public interface IGameDb
     {
         // regist and Login (Auth)
-        Task<ErrorCode> RegistGameUser(Int64 userId);
+        Task<ErrorCode> RegisUserLoginLog(Int64 userId);
         Task<(ErrorCode, LoginLog?)> UpdateAndGetLoginLog(Int64 userId);
         Task<(ErrorCode, LoginLog?)> GetLoginLog(Int64 userId);
+        Task<ErrorCode> DeleteLoginLog(Int64 userId);
         // UserItem
         Task<ErrorCode> InsertUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundles);
         Task<(ErrorCode, List<UserItem>?)> GetUserItemList(Int64 userId);

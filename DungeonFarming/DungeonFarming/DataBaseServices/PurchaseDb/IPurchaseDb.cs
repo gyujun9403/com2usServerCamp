@@ -4,6 +4,7 @@
     {
         Task<ErrorCode> CheckPurchaseDuplicated(string purchaseToken);
         Task<ErrorCode> WritePurchase(long userId, string purchaseToken, short packageCode);
+        Task<ErrorCode> DeletePurchase(long userId, string purchaseToken, short packageCode);
     }
 
 
