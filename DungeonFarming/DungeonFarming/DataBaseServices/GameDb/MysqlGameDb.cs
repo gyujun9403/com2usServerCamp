@@ -515,7 +515,28 @@ public class MysqlGameDb : IGameDb
         }
     }
 
-    
+    public async Task<ErrorCode> DeleteUserItem(Int64 userId, Int64 itemId)
+    {
+        try
+        {
+            await _db.Query("user_items")
+                .Where("user_id", userId)
+                .Where("item_id", itemId)
+                .DeleteAsync();
+            return ErrorCode.None;
+        }
+        catch (MySqlException ex)
+        {
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, itemId = itemId }, "DeleteUserItem MysqlEXCEPTION");
+            return ErrorCode.GameDbError;
+        }
+        catch (Exception ex)
+        {
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, itemId = itemId }, "DeleteUserItem EXCEPTION");
+            return ErrorCode.GameDbError;
+        }
+    }
+
 
     // TODO: 코드 개선 필요...
     public async Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId)

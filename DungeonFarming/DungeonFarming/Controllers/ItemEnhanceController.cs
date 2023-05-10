@@ -109,16 +109,28 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             (response.errorCode, userItem) = DoItemEnhancement(userItem);
-            rtErrorCode = await _gameDb.UpdateUserItem(userItem);
-            if (rtErrorCode != ErrorCode.None)
+            if (response.errorCode == ErrorCode.EnhancementSucess)
             {
-                response.errorCode = rtErrorCode;
-                // DeleteUserItem
-                _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
-                return response;
+                rtErrorCode = await _gameDb.UpdateUserItem(userItem);
+                if (rtErrorCode != ErrorCode.None)
+                {
+                    response.errorCode = rtErrorCode;
+                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
+                    return response;
+                }
+                response.itemId = userItem.item_id;
+                response.userItems = userItem;
             }
-            response.itemId = userItem.item_id;
-            response.userItems = userItem;
+            else //response.errorCode == ErrorCode.EnhancementFail
+            {
+                rtErrorCode = await _gameDb.DeleteUserItem(userPkId, userItem.item_id);
+                if (rtErrorCode != ErrorCode.None)
+                {
+                    response.errorCode = rtErrorCode;
+                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
+                    return response;
+                }
+            }
             _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = userPkId, isSuccess = response.errorCode}, "item enhancement try complete");
             return response;
         }
