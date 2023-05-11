@@ -1,9 +1,11 @@
-﻿namespace DungeonFarming.DTO
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DungeonFarming.DTO
 {
     public class PackagePurchaseRequest : RequestBase
     {
-        public String purchaseToken { get; set; }
-        public Int16 packageCode { get; set; }
+        [Required] public String purchaseToken { get; set; }
+        [Required] public Int16 packageCode { get; set; }
     }
 
     public class PackagePurchaseResponse : ResponseBase
