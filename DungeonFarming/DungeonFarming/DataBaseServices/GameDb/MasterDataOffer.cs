@@ -1,5 +1,6 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb.MasterData;
+using DungeonFarming.DataBaseServices.GameDb.MasterDataDTO;
 using MySqlConnector;
 using SqlKata.Compilers;
 using SqlKata.Execution;
@@ -15,7 +16,12 @@ namespace DungeonFarming.DataBase.GameDb
         Dictionary<Int16, ItemAttrubute> _itemAttributes = new Dictionary<Int16, ItemAttrubute>();
         Dictionary<Int16, List<PackageItem> > _packages = new Dictionary<Int16, List<PackageItem> >();
         Dictionary<Int16, DefaultItems> _defaultItemsList = new Dictionary<Int16, DefaultItems>();
-        Dictionary<Int16, ItemDefine> _itemDefines = new Dictionary<Int16, ItemDefine>();
+        Dictionary<Int64, ItemDefine> _itemDefines = new Dictionary<Int64, ItemDefine>();
+        Dictionary<Int32, Int64> _expPerUserLevel = new Dictionary<Int32, Int64>();
+        Dictionary<Int64, List<ItemBundle> > _stageItemLists = new Dictionary<Int64, List<ItemBundle>>();
+        Dictionary<Int64, List<NpcBundle>> _stageNpcLists = new Dictionary<Int64, List<NpcBundle>>();
+        Dictionary<Int64, StageInfo> _stageInfos = new Dictionary<Int64, StageInfo>();
+
         public MasterDataOffer(IConfiguration config, ILogger<MysqlAccountDb> logger)
         {
             var connString = config.GetConnectionString("Mysql_Game");
@@ -31,8 +37,9 @@ namespace DungeonFarming.DataBase.GameDb
         --------------------------*/
         public bool LoadMasterData()
         {
-            return (LoadDailyLoginRewards() && LoadItemAttributes() 
-                && LoadPackage() && LoadDefaultItemLists() && LoadItemDefines());
+            return (LoadDailyLoginRewards() && LoadItemAttributes()
+                && LoadPackage() && LoadDefaultItemLists() && LoadItemDefines())
+                && LoadUserLevelExp() && LoadStageItems() && LoadStageNpcs() && LoadStageInfos();
         }
 
 
@@ -42,7 +49,9 @@ namespace DungeonFarming.DataBase.GameDb
         public DailyLoginReward? getDailyLoginReward(Int32 dayCount)
         {
             if (_dailyLoginRewards.ContainsKey(dayCount))
+            {
                 return _dailyLoginRewards[dayCount];
+            }
             return null;
         }
         public List<ItemBundle>? getDailyLoginRewardItemBundles(Int32 dayCount)
@@ -67,13 +76,17 @@ namespace DungeonFarming.DataBase.GameDb
         {
             
             if (_itemAttributes.ContainsKey(attribute))
+            {
                 return _itemAttributes[attribute];
+            }
             return null;
         }
         public List<PackageItem>? getPackage(Int16 packageCode)
         {
             if (_packages.ContainsKey(packageCode))
+            {
                 return _packages[packageCode];
+            }
             return null;
         }
         public List<ItemBundle>? getPackageItemBundles(Int16 packageCode)
@@ -100,7 +113,9 @@ namespace DungeonFarming.DataBase.GameDb
         public DefaultItems? getDefaultItems(Int16 listCode)
         {
             if (_defaultItemsList.ContainsKey(listCode))
+            {
                 return _defaultItemsList[listCode];
+            }
             return null;
         }
         public List<ItemBundle>? getDefaultItemBundles(Int16 listCode)
@@ -145,10 +160,47 @@ namespace DungeonFarming.DataBase.GameDb
             }
             return null;
         }
-        public ItemDefine? getItemDefine(Int16 itemCode)
+        public ItemDefine? getItemDefine(Int64 itemCode)
         {
             if (_itemDefines.ContainsKey(itemCode))
+            {
                 return _itemDefines[itemCode];
+            }
+            return null;
+        }
+        public Int64? getMaxExpOfLevel(Int32 level)
+        {
+            if (_expPerUserLevel.ContainsKey(level))
+            {
+                return _expPerUserLevel[level];
+            }
+            return null;
+        }
+
+        public List<ItemBundle>? getStageItemBundle(Int64 stageCode)
+        {
+            if (_stageItemLists.ContainsKey(stageCode))
+            {
+                return _stageItemLists[stageCode];
+            }
+            return null;
+        }
+
+        public List<NpcBundle>? getStageNpcBundle(Int64 stageCode)
+        {
+            if (_stageNpcLists.ContainsKey(stageCode))
+            {
+                return _stageNpcLists[stageCode];
+            }
+            return null;
+        }
+
+        public StageInfo? getStageInfo(Int64 stageCode)
+        {
+            if (_stageInfos.ContainsKey(stageCode))
+            {
+                return _stageInfos[stageCode];
+            }
             return null;
         }
 
@@ -278,5 +330,178 @@ namespace DungeonFarming.DataBase.GameDb
                 return false;
             }
         }
+        bool LoadUserLevelExp()
+        {
+            try
+            {
+                IEnumerable<UserLevelExp> masterData = _db.Query("mt_user_level_exps")
+                    .Select("*").Get<UserLevelExp>();
+                foreach (UserLevelExp expPerLevel in masterData)
+                {
+                    _expPerUserLevel.Add(expPerLevel.user_level, expPerLevel.max_exp);
+                }
+                return true;
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadUserLevelExp MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadUserLevelExp Exception");
+                return false;
+            }
+        }
+
+        bool LoadStageItems()
+        {
+            try
+            {
+                Dictionary<Int64, List<Int64> > registered_items = new Dictionary<Int64, List<Int64> >();
+                IEnumerable<StageItem> masterData = _db.Query("mt_stage_items")
+                    .Select("*").Get<StageItem>();
+                foreach (StageItem stageItem in masterData)
+                {
+                    if (registered_items.ContainsKey(stageItem.stage_code))
+                    {
+                        if (registered_items[stageItem.stage_code].Contains(stageItem.item_code) == true)
+                        {
+                            continue;
+                        }
+                    }
+
+                    Int64 stageItemCount = _db.Query("mt_stage_items")
+                        .Where("stage_code", stageItem.stage_code)
+                        .Where("item_code", stageItem.item_code)
+                        .Count<Int64>();
+                    if (stageItemCount <= 0)
+                    {
+
+                    }
+
+                    if (registered_items.ContainsKey(stageItem.stage_code))
+                    {
+                        registered_items[stageItem.stage_code].Add(stageItem.item_code);
+                    }
+                    else
+                    {
+                        registered_items.Add(stageItem.stage_code, new List<Int64> { stageItem.item_code });
+                    }
+
+                    if (_stageItemLists.ContainsKey(stageItem.stage_code) == true)
+                    {
+                        _stageItemLists[stageItem.stage_code].Add(new ItemBundle
+                        {
+                            itemCode = stageItem.item_code,
+                            itemCount = stageItemCount
+                        });
+                    }
+                    else
+                    {
+                        _stageItemLists.Add(stageItem.stage_code, new List<ItemBundle> { new ItemBundle
+                        {
+                            itemCode = stageItem.item_code,
+                            itemCount = stageItemCount
+                        }});
+                    }
+                }
+                return true;
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageItems MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageItems Exception");
+                return false;
+            }
+        }
+
+        bool LoadStageNpcs()
+        {
+            try
+            {
+                Dictionary<Int64, List<Int64>> registered_npcs = new Dictionary<Int64, List<Int64>>();
+                IEnumerable<StageNpc> masterData = _db.Query("mt_stage_npcs")
+                    .Select("*").Get<StageNpc>();
+                foreach (StageNpc stageNpc in masterData)
+                {
+                    if (registered_npcs.ContainsKey(stageNpc.stage_code))
+                    {
+                        if (registered_npcs[stageNpc.stage_code].Contains(stageNpc.npc_code) == true)
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (registered_npcs.ContainsKey(stageNpc.stage_code))
+                    {
+                        registered_npcs[stageNpc.stage_code].Add(stageNpc.npc_code);
+                    }
+                    else
+                    {
+                        registered_npcs.Add(stageNpc.stage_code, new List<Int64> { stageNpc.npc_code });
+                    }
+
+                    if (_stageNpcLists.ContainsKey(stageNpc.stage_code) == true)
+                    {
+                        _stageNpcLists[stageNpc.stage_code].Add(new NpcBundle
+                        {
+                            npcCode = stageNpc.npc_code,
+                            npcCount = stageNpc.npc_count,
+                            expPerNpc = stageNpc.exp_per_npc
+                        });
+                    }
+                    else
+                    {
+                        _stageNpcLists.Add(stageNpc.stage_code, new List<NpcBundle> { new NpcBundle
+                        {
+                            npcCode = stageNpc.npc_code,
+                            npcCount = stageNpc.npc_count,
+                            expPerNpc = stageNpc.exp_per_npc
+                        }});
+                    }
+                }
+                return true;
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageNpcs MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageNpcs Exception");
+                return false;
+            }
+        }
+
+        bool LoadStageInfos()
+        {
+            try
+            {
+                IEnumerable<StageInfo> masterData = _db.Query("mt_stage_infos")
+                    .Select("*").Get<StageInfo>();
+                foreach (StageInfo stageInfo in masterData)
+                {
+                    _stageInfos.Add(stageInfo.stage_code, stageInfo);
+                }
+                return true;
+            }
+            catch (MySqlException ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageInfos MySqlException");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, ex, new { }, "LoadStageInfos Exception");
+                return false;
+            }
+        }
+
     }
 }
