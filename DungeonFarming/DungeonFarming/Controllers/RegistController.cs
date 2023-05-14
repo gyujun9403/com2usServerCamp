@@ -51,8 +51,22 @@ namespace DungeonFarming.Controllers
             if (await _gameDb.RegisUserLoginLog(pkId) != ErrorCode.None)
             {
                 await _accountDb.DeleteAccount(request.userId);
-                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb regist FAIL");
-                response.errorCode = ErrorCode.ServerError;
+                if (response.errorCode != ErrorCode.DuplicatedId)
+                {
+                    response.errorCode = ErrorCode.ServerError;
+                }
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb LoginLog regist FAIL");
+                return response;
+            }
+            // 0. 유저의 게임 정보 세팅
+            if (await _gameDb.RegistUserAchivement(pkId) != ErrorCode.None)
+            {
+                await _accountDb.DeleteAccount(request.userId);
+                if (response.errorCode != ErrorCode.DuplicatedId)
+                {
+                    response.errorCode = ErrorCode.ServerError;
+                }
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId }, "GameDb UserAchivement regist FAIL");
                 return response;
             }
 
@@ -78,6 +92,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             _logger.ZLogInformationWithPayload(LogEventId.Regist, new { userId = request.userId }, "User Regist SUCCESS");
+
             return response;
         }
     }

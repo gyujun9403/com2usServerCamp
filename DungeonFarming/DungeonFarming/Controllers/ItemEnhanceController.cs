@@ -1,6 +1,7 @@
 ﻿using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameDb.GameUserDataORM;
 using DungeonFarming.DataBase.GameDb.MasterData;
+using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +16,8 @@ namespace DungeonFarming.Controllers
         readonly ILogger<ItemEnhanceController> _logger;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        readonly Int64 _userId;
+        //readonly Int64 _userId;
+        readonly GameSessionData _gameSessionData;
 
         public ItemEnhanceController(IHttpContextAccessor httpContextAccessor, ILogger<ItemEnhanceController> logger, 
             IGameDb gameDb, IMasterDataOffer masterDataOffer)
@@ -23,7 +25,7 @@ namespace DungeonFarming.Controllers
             _logger = logger;
             _gameDb = gameDb;
             _masterDataOffer = masterDataOffer;
-            _userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
         private ErrorCode CheckItemEnhancable(Int16 reqEnhancementCnt, UserItem userItem)
@@ -77,18 +79,18 @@ namespace DungeonFarming.Controllers
         public async Task<ItemEnhancementResponse> ItemEnhancement(ItemEnhancementRequest request)
         {
             ItemEnhancementResponse response = new ItemEnhancementResponse();
-            var (rtErrorCode, userItem) = await _gameDb.GetUserItem(_userId, request.itemId);
+            var (rtErrorCode, userItem) = await _gameDb.GetUserItem(_gameSessionData.userId, request.itemId);
             if (rtErrorCode != ErrorCode.None || userItem == null)
             {
                 response.errorCode = rtErrorCode;
-                _logger.ZLogWarningWithPayload(LogEventId.ItemEnhance, new { userPkId = _userId, ErrorCode = response.errorCode }, "userItem get FAIL");
+                _logger.ZLogWarningWithPayload(LogEventId.ItemEnhance, new { userPkId = _gameSessionData.userId, ErrorCode = response.errorCode }, "userItem get FAIL");
                 return response;
             }
 
             response.errorCode = CheckItemEnhancable(request.enhancementCount, userItem);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = _userId, ErrorCode = response.errorCode }, "CAN'T enhance");
+                _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = _gameSessionData.userId, ErrorCode = response.errorCode }, "CAN'T enhance");
                 return response;
             }
             (response.errorCode, userItem) = DoItemEnhancement(userItem);
@@ -98,7 +100,7 @@ namespace DungeonFarming.Controllers
                 if (rtErrorCode != ErrorCode.None)
                 {
                     response.errorCode = rtErrorCode;
-                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = _userId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
+                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = _gameSessionData.userId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
                     return response;
                 }
                 response.itemId = userItem.item_id;
@@ -106,15 +108,15 @@ namespace DungeonFarming.Controllers
             }
             else //response.errorCode == ErrorCode.EnhancementFail
             {
-                rtErrorCode = await _gameDb.DeleteUserItem(_userId, userItem.item_id);
+                rtErrorCode = await _gameDb.DeleteUserItem(_gameSessionData.userId, userItem.item_id);
                 if (rtErrorCode != ErrorCode.None)
                 {
                     response.errorCode = rtErrorCode;
-                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = _userId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
+                    _logger.ZLogErrorWithPayload(LogEventId.ItemEnhance, new { userPkId = _gameSessionData.userId, userItem = userItem, ErrorCode = response.errorCode }, "userItem update FAIL");
                     return response;
                 }
             }
-            _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = _userId, isSuccess = response.errorCode}, "item enhancement try complete");
+            _logger.ZLogInformationWithPayload(LogEventId.ItemEnhance, new { userPkId = _gameSessionData.userId, isSuccess = response.errorCode}, "item enhancement try complete");
             return response;
         }
     }

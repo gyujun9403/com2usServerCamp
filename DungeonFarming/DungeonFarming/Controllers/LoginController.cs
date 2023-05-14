@@ -67,8 +67,8 @@ namespace DungeonFarming.Controllers
             String token = Security.GenerateToken();
             response.errorCode = await _gameSessionDb.SetUserInfoSession(new GameSessionData
             {
-                userId = request.userId,
-                pkId = userAccountTuple.pk_id.Value,
+                userStringId = request.userId,
+                userId = userAccountTuple.pk_id.Value,
                 token = token,
                 userStatus = UserStatus.Login
                 // TODO: 게임 기능이 추가되면, 스테이지/몬스터 등의 게임 상태도 추가 할 것.

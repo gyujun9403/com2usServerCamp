@@ -1,5 +1,6 @@
 ﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
 using DungeonFarming.DataBase.GameDb.MasterData;
+using DungeonFarming.DataBaseServices.GameDb.GameUserDataDTO;
 
 namespace DungeonFarming.DataBase.GameDb
 {
@@ -21,7 +22,10 @@ namespace DungeonFarming.DataBase.GameDb
         Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount);
         Task<(ErrorCode, Mail?)> GetMail(Int64 userId, Int64 mailId);
         Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId);
-        //Task<(ErrorCode, List<ItemBundle>?)> RecvMailItembundles(Int64 userId, Int64 mailId);
         Task<ErrorCode> DeleteMail(Int64 userId, Int64 mailId);
+        // DungeonInfo
+        Task<ErrorCode> RegistUserAchivement(Int64 userId);
+        Task<(ErrorCode, UserAchievement)> GetUserAchivement(Int64 userId);
+        Task<ErrorCode> UpdateUserAchivement(UserAchievement userAchievement);
     }
 }

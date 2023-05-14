@@ -99,7 +99,7 @@ namespace DungeonFarming.Middleware
                 await SetContext(context, 400, ErrorCode.InvalidToken);
                 return false;
             }
-            context.Items["userId"] = userInfo.pkId;
+            context.Items["gameSessionData"] = userInfo;
             return true;
         }
 

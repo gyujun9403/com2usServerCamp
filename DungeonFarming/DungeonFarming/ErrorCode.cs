@@ -44,7 +44,15 @@ public enum ErrorCode : Int16
     MaxEnhancementLevelExceeded = 73,
     InvalidEnhancementCount = 74,
 
-
     // Item : 80 ~ 89
     ItemCountExceeded = 81,
+
+    // Dungeon : 90 ~ 99
+    InvalidStageCode = 90,
+    LowLevel = 91,
+    UnreachableStage = 92,
+    InvalidNpcCode = 93,
+    InvalidUserStatus = 94,
+    NotEnoughNpcKillCount = 95,
+    TooMuchItemFarmed = 96,
 }

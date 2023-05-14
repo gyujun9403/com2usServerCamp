@@ -15,14 +15,16 @@ namespace DungeonFarming.Controllers
         readonly Int16 _mailsPerPage;
         readonly ILogger<MailController> _logger;
         readonly IGameDb _gameDb;
-        readonly Int64 _userId;
+        //readonly Int64 _userId;
+        readonly GameSessionData _gameSessionData;
         public MailController(IHttpContextAccessor httpContextAccessor, IConfiguration config, ILogger<MailController> logger, IGameDb gameDb)
         {
             _logger = logger;
             _gameDb = gameDb;
             _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
             //_userId = (long)HttpContext.Items["userId"];
-            _userId = httpContextAccessor.HttpContext.Items["userId"] as long? ?? -1;
+            //_userId = httpContextAccessor.HttpContext.Items["userId"] as long? ?? -1;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
         [HttpPost("Preview")]
@@ -36,7 +38,7 @@ namespace DungeonFarming.Controllers
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId, page = request.page }, "GetMailPreview invalid page");
                 return response;
             }
-            (response.errorCode, var mailPreviewList) = await _gameDb.GetMailPreviewList(_userId, request.page * _mailsPerPage, _mailsPerPage);
+            (response.errorCode, var mailPreviewList) = await _gameDb.GetMailPreviewList(_gameSessionData.userId, request.page * _mailsPerPage, _mailsPerPage);
             if ((response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
                 || response.errorCode != ErrorCode.NoMail && mailPreviewList == null)
             {
@@ -64,7 +66,7 @@ namespace DungeonFarming.Controllers
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, new { userId = request.userId, mailId = request.mailId }, "GetMail invalid mailId");
                 return response;
             }
-            (response.errorCode, response.mail) = await _gameDb.GetMail(_userId, request.mailId);
+            (response.errorCode, response.mail) = await _gameDb.GetMail(_gameSessionData.userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail,
@@ -90,7 +92,7 @@ namespace DungeonFarming.Controllers
                     "RecvMailItems invalid mailId");
                 return response;
             }
-            response.errorCode = await _gameDb.RecvMailItems(_userId, request.mailId);
+            response.errorCode = await _gameDb.RecvMailItems(_gameSessionData.userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.Noitems)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail, 
@@ -113,7 +115,7 @@ namespace DungeonFarming.Controllers
                     "DeleteMail invalid mailId");
                 return response;
             }
-            response.errorCode = await _gameDb.DeleteMail(_userId, request.mailId);
+            response.errorCode = await _gameDb.DeleteMail(_gameSessionData.userId, request.mailId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Mail,
