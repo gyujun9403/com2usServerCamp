@@ -83,7 +83,8 @@ namespace DungeonFarming.Controllers
             }
             // 2. 유저의 인벤토리에 기본 지급 아이템들을 지급한다.
             //지급 실패시 GameDb에 유저 제거
-            if (await _gameDb.InsertUserItemsByItemBundles(pkId, itemBundle) != ErrorCode.None)
+            var (rtErrorCode, insertedkey) = await _gameDb.InsertUserItemsByItemBundles(pkId, itemBundle);
+            if (rtErrorCode != ErrorCode.None)
             {
                 await _accountDb.DeleteAccount(request.userId);
                 await _gameDb.DeleteLoginLog(pkId);

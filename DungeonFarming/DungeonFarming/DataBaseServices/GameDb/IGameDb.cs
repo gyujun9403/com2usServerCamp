@@ -12,11 +12,12 @@ namespace DungeonFarming.DataBase.GameDb
         Task<(ErrorCode, LoginLog?)> GetLoginLog(Int64 userId);
         Task<ErrorCode> DeleteLoginLog(Int64 userId);
         // UserItem
-        Task<ErrorCode> InsertUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundles);
+        Task<(ErrorCode, List<Int64>? insertedKeys)> InsertUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundleList);
         Task<(ErrorCode, List<UserItem>?)> GetUserItemList(Int64 userId);
         Task<(ErrorCode, UserItem?)> GetUserItem(Int64 userId, Int64 itemId);
         Task<ErrorCode> UpdateUserItem(UserItem newItem);
         Task<ErrorCode> DeleteUserItem(Int64 userId, Int64 itemId);
+        Task<ErrorCode> GiveUserItems(Int64 userId, List<ItemBundle> itemBundleList);
         // Mail
         Task<ErrorCode> SendMail(Mail mail);
         Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount);
@@ -27,5 +28,7 @@ namespace DungeonFarming.DataBase.GameDb
         Task<ErrorCode> RegistUserAchivement(Int64 userId);
         Task<(ErrorCode, UserAchievement)> GetUserAchivement(Int64 userId);
         Task<ErrorCode> UpdateUserAchivement(UserAchievement userAchievement);
+
+
     }
 }

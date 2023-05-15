@@ -35,67 +35,67 @@ namespace DungeonFarming.Controllers
         public async Task<LastClearedStageResponse> LastClearedStage(AttendanceGetStackRequst request)
         {
             LastClearedStageResponse response = new LastClearedStageResponse();
-            // context에서 userId를 가져온다
-            // 마스터 데이터에서 던전 정보(List)를 받아온다
+
             (response.errorCode, var userAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
             if (response.errorCode != ErrorCode.None)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Dungeon, new { userId = request.userId, errorCode = response.errorCode }, "GetUserAchivement FAIL");
                 return response;
             }
+            
             response.maxClearedStageCode = userAchievement.highest_cleared_stage_id;
+            
             return response;
-            // 유저 데이터를 받아오고, 클리어 정보 제공.
         }
 
-        ErrorCode CheckEnterable(StageInfo stageInfo, UserAchievement userAchievement)
-        {
 
-            // 레벨 체크
-            if (stageInfo.required_user_level > userAchievement.user_level)
-            {
-                return ErrorCode.LowLevel;
-            }
-            else if (stageInfo.stage_code > userAchievement.highest_cleared_stage_id + 1)
-            {
-                return ErrorCode.UnreachableStage;
-            }
-
-            return ErrorCode.None;
-        }
 
         // 던전 입장
         [HttpPost("EnterStage")]
         public async Task<EnterStageResponse> EnterStage(EnterStageRequest request)
         {
             EnterStageResponse response = new EnterStageResponse();
-            // 요청된 스테이지 아이디로 masterdate에서 스테이지 정보를 꺼내옴
+
             var stageInfo = _masterDataOffer.getStageInfo(request.stageId);
             var (rtErrorCode, userAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
             if (rtErrorCode != ErrorCode.None)
             {
                 return response;
             }
-            // 현재 레벨에 접근 가능한지, 그리고 이전 스테이지만 클리어 되어 있지 않은지 확인 -> 이전스테이지의 조건은 스테이지의 아이디가 작으면.
+            
             response.errorCode = CheckEnterable(stageInfo, userAchievement);
             if (response.errorCode != ErrorCode.None)
             {
                 return response;
             }
+
+            GameSessionData newSessionData = _gameSessionData;
             response.stageId = request.stageId;
             var stageNpcList = _masterDataOffer.getStageNpcInfoList(request.stageId);
-            var stageItemList = _masterDataOffer.getStageNpcInfoList(request.stageId);
-            // redis에 session의 데이터에 스테이지의 정보를 넣고, 게이밍 상태로 변경
-            GameSessionData newSessionData = _gameSessionData;
+            var stageItemList = _masterDataOffer.getStageItemInfoList(request.stageId);
+            if (stageNpcList == null || stageItemList == null)
+            {
+                response.errorCode = ErrorCode.InvalidStageCode;
+                response.stageId = request.stageId;
+            }
             newSessionData.stageCode = response.stageId;
             newSessionData.userStatus = UserStatus.Gaming;
-            // 업데이트
             await _gameSessionDb.SetUserInfoSession(newSessionData);
-            // 응답에 반환. 
+            response.isEnterable = true;
+            response.npcBundles = stageNpcList;
+            if (stageItemList != null)
+            {
+                response.rewardItemBundles = new List<ItemBundle>();
+                foreach (var item in stageItemList)
+                {
+                    response.rewardItemBundles.Add(new ItemBundle { itemCode = item.itemCode, itemCount = item.itemCount });
+                }
+            }
+
             return response;
         }
 
-        // 던전에서 몬스터를 하나 잡음
+        [HttpPost("KillNpcs")]
         public async Task<KillNpcResponse> KillNpc(KillNpcRequest request)
         {
             var response = new KillNpcResponse();
@@ -104,7 +104,7 @@ namespace DungeonFarming.Controllers
                 response.errorCode = ErrorCode.InvalidUserStatus;
                 return response;
             }
-            // 세션에 저장된 몬스터 코드가 있는지 확인
+
             var stageNpcDic = _masterDataOffer.getStageNpcInfoDic(_gameSessionData.stageCode);
             if (stageNpcDic == null)
             {
@@ -138,26 +138,24 @@ namespace DungeonFarming.Controllers
                 response.errorCode = ErrorCode.GameSessionDbError;
             }
             return response; 
-            // 에러코드 반환
         }
 
-        // 던전에서 아이템을 얻음
+        [HttpPost("ParmingItems")]
         public async Task<ParmingItemsResponse> ParmingItems(ParmingItemsRequst request)
         {
-            //세션에 저장된 아이템 정보가 있는지 확인 -> 필터로 빼기
+            //TODO: 세션에 저장된 아이템 정보가 있는지 확인 -> 필터로 빼기
             var response = new ParmingItemsResponse();
             if (_gameSessionData.userStatus != UserStatus.Gaming)
             {
                 response.errorCode = ErrorCode.InvalidUserStatus;
                 return response;
             }
-            // 세션에 저장된 아이템 코드가 있는지 확인
+
             var stageItemDic = _masterDataOffer.getStageItemInfoDic(_gameSessionData.stageCode);
             if (stageItemDic == null)
             {
                 return response;
             }
-            response.errorCode = ErrorCode.None;
             foreach (var itemBundel in request.FarmedItemBundle)
             {
                 if (stageItemDic.ContainsKey(itemBundel.itemCode))
@@ -184,29 +182,95 @@ namespace DungeonFarming.Controllers
             {
                 response.errorCode = ErrorCode.GameSessionDbError;
             }
+            response.errorCode = ErrorCode.None;
             return response;
         }
 
-
-        // 던전 클리어 요청
+        [HttpPost("StageClear")]
         public async Task<StageClearResponse> StageClear(StageClearRequest request)
         {
             var response = new StageClearResponse();
+            GameSessionData resetSessionData = _gameSessionData.GetResetSession();
 
             if (_gameSessionData.userStatus != UserStatus.Gaming)
             {
                 response.errorCode = ErrorCode.InvalidUserStatus;
                 return response;
             }
-            
+
+            response.errorCode = await _gameSessionDb.SetUserInfoSession(resetSessionData);
+            if (response.errorCode != ErrorCode.None)
+            {
+                await _gameSessionDb.SetUserInfoSession(_gameSessionData);
+            }
+
+            response.errorCode = CheckItemNpcCount();
+            if ( response.errorCode != ErrorCode.None)
+            {
+                // 요청된 아이템수가 많거나, 몬스터 수가 일치 하지 않으면 세션을 초기화로 냅둔다 -> 게임 무효화.
+                return response; 
+            }
+
+            Int64 achivedExp = 0;
+            var stageNpcDic = _masterDataOffer.getStageNpcInfoDic(_gameSessionData.stageCode);
+            foreach (var npc in _gameSessionData.killedNpcs)
+            {
+                achivedExp += stageNpcDic[npc.Key].expPerNpc * npc.Value;
+            }
+            (response.errorCode, var oldUserAchivement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
+            if (response.errorCode != ErrorCode.None)
+            {
+                await _gameSessionDb.SetUserInfoSession(_gameSessionData);
+                return response;
+            }
+            response.errorCode = await IncreaseUserExp(achivedExp, oldUserAchivement);
+            if (response.errorCode != ErrorCode.None)
+            {
+                await _gameSessionDb.SetUserInfoSession(_gameSessionData);
+                return response;
+            }
+
+            List<ItemBundle> farmedItemBundle = new List<ItemBundle>();
+            foreach (var kvp in _gameSessionData.FarmedItems)
+            {
+                farmedItemBundle.Add(new ItemBundle { itemCode = kvp.Key, itemCount = kvp.Value });
+            }
+            response.errorCode = await _gameDb.GiveUserItems(_gameSessionData.userId, farmedItemBundle);
+            if (response.errorCode != ErrorCode.None)
+            {
+                await _gameSessionDb.SetUserInfoSession(_gameSessionData);
+                await _gameDb.UpdateUserAchivement(oldUserAchivement);
+            }
+
+            response.rewardItemBundles = farmedItemBundle;
+            response.achivedExp = achivedExp;
+            _logger.ZLogInformationWithPayload(LogEventId.Dungeon, new { sessionData = _gameSessionData }, "Stage Clear SUCCESS"); ;
+            return response;
+        }
+
+        ErrorCode CheckEnterable(StageInfo stageInfo, UserAchievement userAchievement)
+        {
+            if (stageInfo.required_user_level > userAchievement.user_level)
+            {
+                return ErrorCode.LowLevel;
+            }
+            else if (stageInfo.stage_code > userAchievement.highest_cleared_stage_id + 1)
+            {
+                return ErrorCode.UnreachableStage;
+            }
+
+            return ErrorCode.None;
+        }
+
+        ErrorCode CheckItemNpcCount()
+        {
             var stageItemDic = _masterDataOffer.getStageItemInfoDic(_gameSessionData.stageCode);
             if (stageItemDic == null)
             {
-                return response;
+                return ErrorCode.InvalidStageCode;
             }
             if (CheckFarmingItems(stageItemDic, _gameSessionData.FarmedItems) == false)
             {
-                response.errorCode = ErrorCode.TooMuchItemFarmed;
                 _logger.ZLogErrorWithPayload(LogEventId.Dungeon,
                     new
                     {
@@ -214,17 +278,17 @@ namespace DungeonFarming.Controllers
                         stageItems = stageItemDic.Values.ToArray(),
                         userFarmedItems = _gameSessionData.FarmedItems.Values.ToArray()
                     }, "Too Much Item Farmed");
-                return response;
+
+                return ErrorCode.TooMuchItemFarmed;
             }
 
             var stageNpcDic = _masterDataOffer.getStageNpcInfoDic(_gameSessionData.stageCode);
             if (stageNpcDic == null)
             {
-                return response;
+                return ErrorCode.InvalidStageCode;
             }
             if (CheckKilledNpcs(stageNpcDic, _gameSessionData.killedNpcs) == false)
             {
-                response.errorCode = ErrorCode.NotEnoughNpcKillCount;
                 _logger.ZLogErrorWithPayload(LogEventId.Dungeon,
                     new
                     {
@@ -232,40 +296,48 @@ namespace DungeonFarming.Controllers
                         stageNpc = stageNpcDic.Values.ToArray(),
                         userKilledNpcs = _gameSessionData.killedNpcs.Values.ToArray()
                     }, "Not Enough Npc Kill");
-                return response;
+                return ErrorCode.NotEnoughNpcKillCount;
             }
-
-            GameSessionData backupSessionData = _gameSessionData;
-            _gameSessionData.ResetGameData();
-            response.errorCode = await _gameSessionDb.SetUserInfoSession(_gameSessionData);
-            if (response.errorCode != ErrorCode.None)
-            {
-                await _gameSessionDb.SetUserInfoSession(backupSessionData);
-            }
-            // TODO: 일단 집어넣게 하고, 메일꺼랑 같이 연동 되게 고치기.
-            var itemList = _gameSessionData.FarmedItems.Select(kv => new ItemBundle { itemCode = kv.Key, itemCount = kv.Value }).ToList();
-            response.errorCode = await _gameDb.InsertUserItemsByItemBundles(_gameSessionData.userId, itemList);
-            if (response.errorCode != ErrorCode.None)
-            {
-                await _gameSessionDb.SetUserInfoSession(backupSessionData);
-            }
-
-            // 반환
-            response.rewardItemBundles = itemList;
-            foreach ( var npc in _gameSessionData.killedNpcs)
-            {
-                response.achivedExp += stageNpcDic[npc.Key].expPerNpc * npc.Value;
-            }
-            return response;
+            return ErrorCode.None;
         }
         bool CheckFarmingItems(Dictionary<Int64, ItemBundle> stageItemsDic, Dictionary<Int64, Int64> farmingItems)
         {
             return farmingItems.All(reqItem => stageItemsDic.TryGetValue(reqItem.Key, out var stageItems) && stageItems.itemCount >= reqItem.Value);
         }
-
         bool CheckKilledNpcs(Dictionary<Int64, StageNpcInfo> stageNpcsDic, Dictionary<Int64, Int64> killedNpcs)
         {
-            return killedNpcs.All(reqNpc => stageNpcsDic.TryGetValue(reqNpc.Key, out var stageNpc) && stageNpc.npcCount <= reqNpc.Value);
+            return killedNpcs.All(reqNpc => stageNpcsDic.TryGetValue(reqNpc.Key, out var stageNpc) && stageNpc.npcCount == reqNpc.Value);
         }
+
+        async Task<ErrorCode> IncreaseUserExp(Int64 achivedExp, UserAchievement userAchivement)
+        {
+
+            var newUserAchivement = userAchivement.Clone();
+            var maxExpOfLevel = _masterDataOffer.getMaxExpOfLevel(newUserAchivement.user_level);
+            if (maxExpOfLevel == null)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.Dungeon, new { newUserAchivement = newUserAchivement }, "Max Exp get Fail");
+                return ErrorCode.GameDbError;
+            }
+            if (newUserAchivement.user_exp + achivedExp > maxExpOfLevel)
+            {
+                if (_masterDataOffer.getMaxExpOfLevel(newUserAchivement.user_level + 1) == null)
+                {
+                    long? maxExp = maxExpOfLevel;
+                    newUserAchivement.user_exp = maxExp ?? newUserAchivement.user_exp;
+                }
+                else
+                {
+                    newUserAchivement.user_level += 1;
+                    newUserAchivement.user_exp = newUserAchivement.user_exp + achivedExp - maxExpOfLevel.Value;
+                }
+            }
+            if (await _gameDb.UpdateUserAchivement(newUserAchivement) != ErrorCode.None)
+            {
+                return ErrorCode.GameDbError;
+            }
+            return ErrorCode.None;
+        }
+
     }
 }
