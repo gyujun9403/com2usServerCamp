@@ -69,7 +69,7 @@ namespace DungeonFarming.DataBase.GameSessionDb
         {
             try
             {
-                var keyString = GenerateUserInfoSessionKey(userInfo.userId);
+                var keyString = GenerateUserInfoSessionKey(userInfo.userStringId);
                 var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
                 if (await redisString.SetAsync(userInfo, TimeSpan.FromHours(1)) == true)
                 {

@@ -1,5 +1,6 @@
 ﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
 using DungeonFarming.DataBase.GameDb.MasterData;
+using DungeonFarming.DataBaseServices.GameDb.GameUserDataDTO;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Hosting;
 using MySqlConnector;
@@ -599,7 +600,7 @@ public class MysqlGameDb : IGameDb
                 }
             }
 
-        }       
+        }
         catch (Exception ex)
         {
             _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, mailId = mailId }, "RecvMailItems get mail EXCEPTION");
@@ -627,5 +628,67 @@ public class MysqlGameDb : IGameDb
             _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, mailId = mailId }, "DeleteMail EXCEPTION");
             return ErrorCode.GameDbError;
         }
+    }
+
+    // Dungeon
+
+    public async Task<ErrorCode> RegistUserAchivement(long userId)
+    {
+        try
+        {
+            await _db.Query("user_achievement")
+                .InsertAsync(new UserAchievement {
+                    user_id = userId,
+                    user_level = 1,
+                    user_exp = 0,
+                    highest_cleared_stage_id = -1
+                });
+            return ErrorCode.None;
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number == 1062) //duplicated id exception
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId }, "RegistUserAchivement duplicated id MySqlException");
+                return ErrorCode.DuplicatedId;
+            }
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId }, "RegistUserAchivement MySqlException");
+            return ErrorCode.GameDbError;
+        }
+        catch (Exception ex)
+        {
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId }, "RegistGameUser EXCEPTION");
+            return ErrorCode.GameDbError;
+        }
+    }
+
+    public async Task<(ErrorCode, UserAchievement?)> GetUserAchivement(Int64 userId)
+    {
+        try
+        {
+            UserAchievement userAchievement = await _db.Query("user_achievement")
+            .Where("user_id", userId)
+            .FirstOrDefaultAsync<UserAchievement>();
+            if (userAchievement == null || userAchievement.user_id == -1)
+            {
+                _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId }, "GetUserAchivement invalid userId");
+                return (ErrorCode.InvalidId, null);
+            }
+            return (ErrorCode.None, userAchievement);
+        }
+        catch (MySqlException ex)
+        {
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId }, "GetUserAchivement MysqlEXCEPTION");
+            return (ErrorCode.InvalidId, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId }, "GetUserAchivement EXCEPTION");
+            return (ErrorCode.GameDbError, null);
+        }
+    }
+    public async Task<ErrorCode> UpdateUserAchivement(UserAchievement userAchievement)
+    {
+            return ErrorCode.None;
     }
 }

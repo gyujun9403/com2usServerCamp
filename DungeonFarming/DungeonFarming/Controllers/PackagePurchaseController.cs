@@ -1,5 +1,6 @@
 ﻿using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DataBase.PurchaseDb;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
@@ -16,15 +17,18 @@ namespace DungeonFarming.Controllers
         readonly IPurchaseDb _purchaseDb;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        readonly Int64 _userId;
+        //readonly Int64 _userId;
+        readonly GameSessionData _gameSessionData;
 
-        public PackagePurchaseController(IHttpContextAccessor httpContextAccessor, ILogger<PackagePurchaseController> logger, IPurchaseDb purchaseDb, IGameDb gameDb, IMasterDataOffer masterDataOffer)
+        public PackagePurchaseController(IHttpContextAccessor httpContextAccessor, ILogger<PackagePurchaseController> logger, 
+            IPurchaseDb purchaseDb, IGameDb gameDb, IMasterDataOffer masterDataOffer)
         {
             _logger = logger;
             _purchaseDb = purchaseDb;
             _gameDb = gameDb;
             _masterDataOffer = masterDataOffer;
-            _userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
+            //_userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
         private bool CheckPurchaseValid(String purchaseToken)
@@ -94,7 +98,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 구매 내역 입력
-            rtErrorCode = await _purchaseDb.WritePurchase(_userId, request.purchaseToken, request.packageCode);
+            rtErrorCode = await _purchaseDb.WritePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode);
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = rtErrorCode;
@@ -102,10 +106,10 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             // 유저에게 메일로 전송
-            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(_userId, request.packageCode, itemBundle));
+            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(_gameSessionData.userId, request.packageCode, itemBundle));
             if (response.errorCode != ErrorCode.None)
             {
-                await _purchaseDb.DeletePurchase(_userId, request.purchaseToken, request.packageCode);
+                await _purchaseDb.DeletePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode);
                 _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase mail send FAIL");
                 return response;
             }

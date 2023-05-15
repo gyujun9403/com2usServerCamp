@@ -1,6 +1,7 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +16,16 @@ namespace DungeonFarming.Controllers
         readonly IGameDb _gameDb;
         readonly ILogger<AttendanceController> _logger;
         readonly IMasterDataOffer _masterDataOffer;
-        readonly Int64 _userId;
+        //readonly Int64 _userId;
+        readonly GameSessionData _gameSessionData;
         public AttendanceController(IHttpContextAccessor httpContextAccessor, ILogger<AttendanceController> logger,
             IGameDb gameDb, IMasterDataOffer masterDataOffer)
         {
             _gameDb = gameDb;
             _logger = logger;
             _masterDataOffer = masterDataOffer;
-            _userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
+            //_userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
         [HttpPost()]
@@ -30,7 +33,7 @@ namespace DungeonFarming.Controllers
         {
             AttendanceResponse response = new AttendanceResponse();
 
-            (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(_userId);
+            (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(_gameSessionData.userId);
             if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.AreadyLogin)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog Update and Get FAIL");
@@ -64,16 +67,16 @@ namespace DungeonFarming.Controllers
         {
             AttendanceGetStackResponse response = new AttendanceGetStackResponse();
 
-            var (errorCode, loginlog) = await _gameDb.GetLoginLog(_userId);
+            var (errorCode, loginlog) = await _gameDb.GetLoginLog(_gameSessionData.userId);
             if (loginlog == null)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = _userId }, "login log get FAIL");
+                _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { userId = _gameSessionData.userId }, "login log get FAIL");
                 return response;
             }
 
             response.attendanceStack = loginlog.consecutive_login_count;
-            _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { pkId = _userId }, "login reward stack send SUCCESS");
+            _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { userId = _gameSessionData.userId }, "login reward stack send SUCCESS");
             return response;
         }
 

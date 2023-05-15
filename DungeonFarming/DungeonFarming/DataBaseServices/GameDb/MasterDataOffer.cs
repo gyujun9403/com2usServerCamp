@@ -4,6 +4,8 @@ using DungeonFarming.DataBaseServices.GameDb.MasterDataDTO;
 using MySqlConnector;
 using SqlKata.Compilers;
 using SqlKata.Execution;
+using System.Reflection.Emit;
+using System.Security.Principal;
 using ZLogger;
 
 namespace DungeonFarming.DataBase.GameDb
@@ -18,8 +20,10 @@ namespace DungeonFarming.DataBase.GameDb
         Dictionary<Int16, DefaultItems> _defaultItemsList = new Dictionary<Int16, DefaultItems>();
         Dictionary<Int64, ItemDefine> _itemDefines = new Dictionary<Int64, ItemDefine>();
         Dictionary<Int32, Int64> _expPerUserLevel = new Dictionary<Int32, Int64>();
-        Dictionary<Int64, List<ItemBundle> > _stageItemLists = new Dictionary<Int64, List<ItemBundle>>();
-        Dictionary<Int64, List<NpcBundle>> _stageNpcLists = new Dictionary<Int64, List<NpcBundle>>();
+        //Dictionary<Int64, List<ItemBundle> > _stageItemLists = new Dictionary<Int64, List<ItemBundle>>();
+        Dictionary<Int64, Dictionary<Int64, ItemBundle>> _stageItemDics = new Dictionary<Int64, Dictionary<Int64, ItemBundle>>();
+        //Dictionary<Int64, List<StageNpcInfo>> _stageNpcLists = new Dictionary<Int64, List<StageNpcInfo>>();
+        Dictionary<Int64, Dictionary<Int64, StageNpcInfo>> _stageNpcDics = new Dictionary<Int64, Dictionary<Int64, StageNpcInfo>>();
         Dictionary<Int64, StageInfo> _stageInfos = new Dictionary<Int64, StageInfo>();
 
         public MasterDataOffer(IConfiguration config, ILogger<MysqlAccountDb> logger)
@@ -177,20 +181,38 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public List<ItemBundle>? getStageItemBundle(Int64 stageCode)
+        public List<ItemBundle>? getStageItemInfoList(Int64 stageCode)
         {
-            if (_stageItemLists.ContainsKey(stageCode))
+            if (_stageItemDics.ContainsKey(stageCode))
             {
-                return _stageItemLists[stageCode];
+                return _stageItemDics[stageCode].Values.ToList();
             }
             return null;
         }
 
-        public List<NpcBundle>? getStageNpcBundle(Int64 stageCode)
+        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int64 stageCode)
         {
-            if (_stageNpcLists.ContainsKey(stageCode))
+            if (_stageItemDics.ContainsKey(stageCode))
             {
-                return _stageNpcLists[stageCode];
+                return _stageItemDics[stageCode];
+            }
+            return null;
+        }
+
+        public List<StageNpcInfo>? getStageNpcInfoList(Int64 stageCode)
+        {
+            if (_stageNpcDics.ContainsKey(stageCode))
+            {
+                return _stageNpcDics[stageCode].Values.ToList();
+            }
+            return null;
+        }
+
+        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int64 stageCode)
+        {
+            if (_stageNpcDics.ContainsKey(stageCode))
+            {
+                return _stageNpcDics[stageCode];
             }
             return null;
         }
@@ -389,9 +411,9 @@ namespace DungeonFarming.DataBase.GameDb
                         registered_items.Add(stageItem.stage_code, new List<Int64> { stageItem.item_code });
                     }
 
-                    if (_stageItemLists.ContainsKey(stageItem.stage_code) == true)
+                    if (_stageItemDics.ContainsKey(stageItem.stage_code) == true)
                     {
-                        _stageItemLists[stageItem.stage_code].Add(new ItemBundle
+                        _stageItemDics[stageItem.stage_code].Add(stageItem.item_code, new ItemBundle
                         {
                             itemCode = stageItem.item_code,
                             itemCount = stageItemCount
@@ -399,11 +421,9 @@ namespace DungeonFarming.DataBase.GameDb
                     }
                     else
                     {
-                        _stageItemLists.Add(stageItem.stage_code, new List<ItemBundle> { new ItemBundle
-                        {
-                            itemCode = stageItem.item_code,
-                            itemCount = stageItemCount
-                        }});
+                        _stageItemDics.Add(stageItem.stage_code, new Dictionary<Int64, ItemBundle> {
+                            { stageItem.item_code, new ItemBundle { itemCode = stageItem.item_code, itemCount = stageItemCount } }
+                            });
                     }
                 }
                 return true;
@@ -446,9 +466,9 @@ namespace DungeonFarming.DataBase.GameDb
                         registered_npcs.Add(stageNpc.stage_code, new List<Int64> { stageNpc.npc_code });
                     }
 
-                    if (_stageNpcLists.ContainsKey(stageNpc.stage_code) == true)
+                    if (_stageNpcDics.ContainsKey(stageNpc.stage_code) == true)
                     {
-                        _stageNpcLists[stageNpc.stage_code].Add(new NpcBundle
+                        _stageNpcDics[stageNpc.stage_code].Add(stageNpc.npc_code, new StageNpcInfo
                         {
                             npcCode = stageNpc.npc_code,
                             npcCount = stageNpc.npc_count,
@@ -457,12 +477,9 @@ namespace DungeonFarming.DataBase.GameDb
                     }
                     else
                     {
-                        _stageNpcLists.Add(stageNpc.stage_code, new List<NpcBundle> { new NpcBundle
-                        {
-                            npcCode = stageNpc.npc_code,
-                            npcCount = stageNpc.npc_count,
-                            expPerNpc = stageNpc.exp_per_npc
-                        }});
+                        _stageNpcDics.Add(stageNpc.stage_code, new Dictionary<Int64, StageNpcInfo> {
+                            { stageNpc.npc_code, new StageNpcInfo { npcCode = stageNpc.npc_code, npcCount = stageNpc.npc_count, expPerNpc = stageNpc.exp_per_npc }}
+                        });
                     }
                 }
                 return true;

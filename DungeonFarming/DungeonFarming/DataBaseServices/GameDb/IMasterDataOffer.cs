@@ -15,8 +15,10 @@ namespace DungeonFarming.DataBase.GameDb
         public List<ItemBundle>? getDefaultItemBundles(Int16 listCode);
         public ItemDefine? getItemDefine(Int64 itemCode);
         public Int64? getMaxExpOfLevel(Int32 level);
-        public List<ItemBundle>? getStageItemBundle(Int64 stageCode);
-        public List<NpcBundle>? getStageNpcBundle(Int64 stageCode);
+        public List<ItemBundle>? getStageItemInfoList(Int64 stageCode);
+        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int64 stageCode);
+        public List<StageNpcInfo>? getStageNpcInfoList(Int64 stageCode);
+        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int64 stageCode);
         public StageInfo? getStageInfo(Int64 stageCode);
     }
 }
