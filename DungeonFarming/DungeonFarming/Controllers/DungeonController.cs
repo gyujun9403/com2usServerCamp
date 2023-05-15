@@ -143,7 +143,7 @@ namespace DungeonFarming.Controllers
         [HttpPost("ParmingItems")]
         public async Task<ParmingItemsResponse> ParmingItems(ParmingItemsRequst request)
         {
-            //세션에 저장된 아이템 정보가 있는지 확인 -> 필터로 빼기
+            //TODO: 세션에 저장된 아이템 정보가 있는지 확인 -> 필터로 빼기
             var response = new ParmingItemsResponse();
             if (_gameSessionData.userStatus != UserStatus.Gaming)
             {
@@ -207,7 +207,7 @@ namespace DungeonFarming.Controllers
             response.errorCode = CheckItemNpcCount();
             if ( response.errorCode != ErrorCode.None)
             {
-                // 요청된 아이템수가 많거나, 몬스터 수가 일치 하지 않으면 세션을 초기화한다 -> 게임 무효화.
+                // 요청된 아이템수가 많거나, 몬스터 수가 일치 하지 않으면 세션을 초기화로 냅둔다 -> 게임 무효화.
                 return response; 
             }
 
@@ -250,8 +250,6 @@ namespace DungeonFarming.Controllers
 
         ErrorCode CheckEnterable(StageInfo stageInfo, UserAchievement userAchievement)
         {
-
-            // 레벨 체크
             if (stageInfo.required_user_level > userAchievement.user_level)
             {
                 return ErrorCode.LowLevel;
