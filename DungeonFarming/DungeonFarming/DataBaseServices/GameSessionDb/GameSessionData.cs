@@ -18,11 +18,35 @@ public class GameSessionData
     //public Dictionary<Int64, Int64> FarmedItems { get; set; } = new Dictionary<Int64, Int64>();
     public Dictionary<Int64, Int64> FarmedItems { get; set; } = new Dictionary<Int64, Int64>();
 
+    public GameSessionData GetResetSession()
+    {
+        return new GameSessionData
+        {
+            userStringId = this.userStringId,
+            userId = this.userId,
+            token = this.token,
+            userStatus = UserStatus.Login
+        };
+    }
+
     public void ResetGameData()
     {
         userStatus = UserStatus.Login;
         stageCode = 0;
         killedNpcs.Clear();
         FarmedItems.Clear();
+    }
+
+    public GameSessionData Clone()
+    {
+        return new GameSessionData
+        {
+            userStringId = this.userStringId,
+            userId = this.userId,
+            token = this.token,
+            stageCode = this.stageCode,
+            killedNpcs = new Dictionary<Int64, Int64>(this.killedNpcs),
+            FarmedItems = new Dictionary<Int64, Int64>(this.FarmedItems)
+        };
     }
 }
