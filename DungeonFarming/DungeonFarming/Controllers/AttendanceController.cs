@@ -26,25 +26,25 @@ namespace DungeonFarming.Controllers
             _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
-        [HttpPost()]
+        [HttpPost]
         public async Task<AttendanceResponse> Attendance(AttendanceRequest request)
         {
             AttendanceResponse response = new AttendanceResponse();
 
             (response.errorCode, var loginLog) = await _gameDb.UpdateAndGetLoginLog(_gameSessionData.userId);
-            if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.AreadyLogin)
+            if (response.errorCode == ErrorCode.GameDbError || response.errorCode == ErrorCode.InvalidUserData)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog Update and Get FAIL");
                 return response;
             }
-            else if (response.errorCode == ErrorCode.AreadyLogin)
+            else if (response.errorCode == ErrorCode.AreadyLogin && loginLog != null)
             {
-                _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "User Login request AGAIN");
+                response.attendanceStack = loginLog.consecutive_login_count;
+                return response;
             }
             else if (loginLog == null)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog is NULL");
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "UpdateAndGetLoginLog return Invalid Values");
                 return response;
             }
 
@@ -57,27 +57,9 @@ namespace DungeonFarming.Controllers
                 return response; ;
             }
             response.attendanceStack = loginLog.consecutive_login_count;
+            _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, loginLog = loginLog }, "Loginlog SendMail SUCCESS");
             return response;
         }
-
-        [HttpPost("GetStack")]
-        public async Task<AttendanceGetStackResponse> AttendanceGetStack(AttendanceGetStackRequst request)
-        {
-            AttendanceGetStackResponse response = new AttendanceGetStackResponse();
-
-            var (errorCode, loginlog) = await _gameDb.GetLoginLog(_gameSessionData.userId);
-            if (loginlog == null)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { userId = _gameSessionData.userId }, "login log get FAIL");
-                return response;
-            }
-
-            response.attendanceStack = loginlog.consecutive_login_count;
-            _logger.ZLogErrorWithPayload(LogEventId.DailyLoginReward, new { userId = _gameSessionData.userId }, "login reward stack send SUCCESS");
-            return response;
-        }
-
 
         Mail GenerateLoginRewardMail(LoginLog log, List<ItemBundle>? itemBundle)
         {

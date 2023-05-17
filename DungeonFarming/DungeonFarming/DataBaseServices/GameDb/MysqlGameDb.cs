@@ -376,7 +376,7 @@ public class MysqlGameDb : IGameDb
         }
     }
 
-    public async Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId)
+    public async Task<(ErrorCode, List<ItemBundle>?)> RecvMailItems(Int64 userId, Int64 mailId)
     {
         try
         {
@@ -390,7 +390,7 @@ public class MysqlGameDb : IGameDb
             if (mail == null)
             {
                 _logger.ZLogWarningWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mailId }, "RecvMailItems invalid mailId");
-                return ErrorCode.InvalidMailId;
+                return (ErrorCode.InvalidMailId, null);
             }
             await mailQuery.UpdateAsync( GetMailItemDefaultObj() );
 
@@ -398,22 +398,22 @@ public class MysqlGameDb : IGameDb
             if (attachedItemBundle == null)
             {
                 await mailQuery.UpdateAsync(mail);
-                return ErrorCode.Noitems;
+                return (ErrorCode.Noitems, null);
             }
 
             var rtErrorCode = await GiveUserItems(userId, attachedItemBundle);
             if (rtErrorCode != ErrorCode.None)
             {
                 await mailQuery.UpdateAsync(mail);
-                return rtErrorCode;
+                return (rtErrorCode, attachedItemBundle);
             }
+            return (rtErrorCode, null);
         }
         catch (Exception ex)
         {
             _logger.ZLogErrorWithPayload(LogEventId.GameDb, ex, new { userId = userId, mailId = mailId }, "RecvMailItems get mail EXCEPTION");
-            return ErrorCode.GameDbError;
+            return (ErrorCode.GameDbError, null);
         }
-        return ErrorCode.None;
     }
     public async Task<ErrorCode> DeleteMail(Int64 userId, Int64 mailId)
     {

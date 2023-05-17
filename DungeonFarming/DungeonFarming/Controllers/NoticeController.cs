@@ -23,12 +23,7 @@ namespace DungeonFarming.Controllers
         {
             NoticeResponse response = new NoticeResponse();
             (response.errorCode, response.notice) = await _gameSessionDb.GetNotice();
-            if (response.errorCode != ErrorCode.None)
-            {
-                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userid = request.userId, ErrorCode = response.errorCode }, "Notioce get FAIL");
-                return response;
-            }
-            _logger.ZLogInformationWithPayload(LogEventId.GameSessionDb, new { userid = request.userId }, "Notice get Success");
+
             return response;
         }
     }
