@@ -16,7 +16,6 @@ namespace DungeonFarming.Controllers
         readonly IGameDb _gameDb;
         readonly ILogger<AttendanceController> _logger;
         readonly IMasterDataOffer _masterDataOffer;
-        //readonly Int64 _userId;
         readonly GameSessionData _gameSessionData;
         public AttendanceController(IHttpContextAccessor httpContextAccessor, ILogger<AttendanceController> logger,
             IGameDb gameDb, IMasterDataOffer masterDataOffer)
@@ -24,7 +23,6 @@ namespace DungeonFarming.Controllers
             _gameDb = gameDb;
             _logger = logger;
             _masterDataOffer = masterDataOffer;
-            //_userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
             _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
@@ -108,6 +106,7 @@ namespace DungeonFarming.Controllers
             mail.mail_title = $"로그인 보상 {log.consecutive_login_count}일 차";
             mail.mail_text = $"로그인 보상 {log.consecutive_login_count}일 차!!!";
             mail.recieve_date = DateTime.Now;
+            mail.read_date = new DateTime(9999, 12, 31, 23, 59, 59);
             mail.expiration_date = DateTime.Now.AddDays(15);
             return mail;
         }

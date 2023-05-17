@@ -16,7 +16,6 @@ namespace DungeonFarming.Controllers
         readonly ILogger<ItemEnhanceController> _logger;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        //readonly Int64 _userId;
         readonly GameSessionData _gameSessionData;
 
         public ItemEnhanceController(IHttpContextAccessor httpContextAccessor, ILogger<ItemEnhanceController> logger, 

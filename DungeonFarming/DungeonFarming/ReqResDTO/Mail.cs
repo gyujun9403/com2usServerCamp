@@ -30,7 +30,7 @@ public class DeleteMailRequest : RequestBase
 
 public class MailPreviewResponse : ResponseBase
 {
-    public List<MailPreview>? mailDataList { get; set; }
+    public List<MailListElem>? mailDataList { get; set; }
 }
 
 public class GetMailResponse : ResponseBase
