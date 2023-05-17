@@ -20,8 +20,8 @@ namespace DungeonFarming.DataBase.GameDb
         Task<ErrorCode> GiveUserItems(Int64 userId, List<ItemBundle> itemBundleList);
         // Mail
         Task<ErrorCode> SendMail(Mail mail);
-        Task<(ErrorCode, List<MailPreview>?)> GetMailPreviewList(Int64 userId, Int32 startIndex, Int32 mailCount);
-        Task<(ErrorCode, Mail?)> GetMail(Int64 userId, Int64 mailId);
+        Task<(ErrorCode, List<MailListElem>?)> GetMailListUp(Int64 userId, Int32 startIndex, Int32 mailCount);
+        Task<(ErrorCode, Mail?)> OpenMail(Int64 userId, Int64 mailId);
         Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId);
         Task<ErrorCode> DeleteMail(Int64 userId, Int64 mailId);
         // DungeonInfo

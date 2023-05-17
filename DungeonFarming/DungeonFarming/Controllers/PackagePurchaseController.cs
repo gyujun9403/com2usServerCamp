@@ -17,7 +17,6 @@ namespace DungeonFarming.Controllers
         readonly IPurchaseDb _purchaseDb;
         readonly IGameDb _gameDb;
         readonly IMasterDataOffer _masterDataOffer;
-        //readonly Int64 _userId;
         readonly GameSessionData _gameSessionData;
 
         public PackagePurchaseController(IHttpContextAccessor httpContextAccessor, ILogger<PackagePurchaseController> logger, 
@@ -27,7 +26,6 @@ namespace DungeonFarming.Controllers
             _purchaseDb = purchaseDb;
             _gameDb = gameDb;
             _masterDataOffer = masterDataOffer;
-            //_userId = httpContextAccessor.HttpContext.Items["userId"] as Int64? ?? -1;
             _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
@@ -65,7 +63,7 @@ namespace DungeonFarming.Controllers
             mail.mail_title = $"패키지 구매";
             mail.mail_text = $"구매하신 {PackageCode}번 패키지 아이템 입니다";
             mail.recieve_date = DateTime.Now;
-            mail.expiration_date = null;
+            mail.expiration_date = new DateTime(9999, 12, 31, 23, 59, 59); //TODO: 올바른 값이 들어가는지 확인
             return mail;
         }
 
