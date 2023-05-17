@@ -49,7 +49,7 @@ namespace DungeonFarming.ReqResDTO
 
     public class ParmingItemsRequst : RequestBase
     {
-        [Required] public List<ItemBundle> FarmedItemBundle { get; set; }
+        [Required] public List<ItemBundle> FarmedItemList { get; set; }
     }
 
     public class ParmingItemsResponse : ResponseBase

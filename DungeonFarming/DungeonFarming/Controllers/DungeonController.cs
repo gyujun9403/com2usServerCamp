@@ -39,12 +39,10 @@ namespace DungeonFarming.Controllers
             (response.errorCode, var userAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Dungeon, new { userId = request.userId, errorCode = response.errorCode }, "GetUserAchivement FAIL");
                 return response;
             }
             
-            response.maxClearedStageCode = userAchievement.highest_cleared_stage_id;
-            
+            response.maxClearedStageCode = userAchievement.highest_cleared_stage_id;            
             return response;
         }
 
@@ -57,8 +55,14 @@ namespace DungeonFarming.Controllers
             EnterStageResponse response = new EnterStageResponse();
 
             var stageInfo = _masterDataOffer.getStageInfo(request.stageId);
-            var (rtErrorCode, userAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
-            if (rtErrorCode != ErrorCode.None)
+            if (stageInfo == null)
+            {
+                response.errorCode = ErrorCode.InvalidStageCode;
+                return response;
+            }
+
+            (response.errorCode, var userAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
+            if (response.errorCode != ErrorCode.None)
             {
                 return response;
             }
@@ -76,20 +80,20 @@ namespace DungeonFarming.Controllers
             if (stageNpcList == null || stageItemList == null)
             {
                 response.errorCode = ErrorCode.InvalidStageCode;
+                _logger.ZLogWarningWithPayload(LogEventId.Dungeon, new { userId = _gameSessionData.userId, stageId = request.stageId }, "Invalid stageId requested");
                 response.stageId = request.stageId;
             }
+
+            // TODO: 게임 관련 요청일때만 게임 세션 정보를 가져오게 변경.
             newSessionData.stageCode = response.stageId;
             newSessionData.userStatus = UserStatus.Gaming;
             await _gameSessionDb.SetUserInfoSession(newSessionData);
             response.isEnterable = true;
             response.npcBundles = stageNpcList;
-            if (stageItemList != null)
+            response.rewardItemBundles = new List<ItemBundle>();
+            foreach (var item in stageItemList)
             {
-                response.rewardItemBundles = new List<ItemBundle>();
-                foreach (var item in stageItemList)
-                {
-                    response.rewardItemBundles.Add(new ItemBundle { itemCode = item.itemCode, itemCount = item.itemCount });
-                }
+                response.rewardItemBundles.Add(new ItemBundle { itemCode = item.itemCode, itemCount = item.itemCount });
             }
 
             return response;
@@ -108,9 +112,11 @@ namespace DungeonFarming.Controllers
             var stageNpcDic = _masterDataOffer.getStageNpcInfoDic(_gameSessionData.stageCode);
             if (stageNpcDic == null)
             {
+                response.errorCode = ErrorCode.InvalidNpcCode;
+                _logger.ZLogWarningWithPayload(LogEventId.Dungeon, new { userId = _gameSessionData.userId, stageId = _gameSessionData.stageCode }, "Invalid stageId requested");
                 return response;
             }
-            response.errorCode = ErrorCode.None;
+
             foreach (var npcBundel in request.killedNpcList)
             {
                 if (stageNpcDic.ContainsKey(npcBundel.npcCode))
@@ -128,15 +134,18 @@ namespace DungeonFarming.Controllers
                 {
                     response.errorCode = ErrorCode.InvalidNpcCode;
                     _gameSessionData.ResetGameData();
+                    _logger.ZLogWarningWithPayload(LogEventId.Dungeon, new { userId = _gameSessionData.userId, stageId = request.killedNpcList }, "Invalid NpcId requested");
                     break;
                 }
             }
 
+            // TODO: 업데이트 이전에, 몬스터 수가 현재 게임의 수를 초과하진 않았는지 확인. 넘었으면 에러 반환.
             var rtErrorCode = await _gameSessionDb.SetUserInfoSession(_gameSessionData);
             if (rtErrorCode != ErrorCode.None)
             {
                 response.errorCode = ErrorCode.GameSessionDbError;
             }
+            response.errorCode = ErrorCode.None;
             return response; 
         }
 
@@ -156,7 +165,7 @@ namespace DungeonFarming.Controllers
             {
                 return response;
             }
-            foreach (var itemBundel in request.FarmedItemBundle)
+            foreach (var itemBundel in request.FarmedItemList)
             {
                 if (stageItemDic.ContainsKey(itemBundel.itemCode))
                 {
@@ -167,6 +176,7 @@ namespace DungeonFarming.Controllers
                     else
                     {
                         _gameSessionData.FarmedItems.Add(itemBundel.itemCode, itemBundel.itemCount);
+                        _logger.ZLogWarningWithPayload(LogEventId.Dungeon, new { userId = _gameSessionData.userId, stageId = request.FarmedItemList }, "Invalid ItemId requested");
                     }
                 }
                 else
@@ -202,12 +212,14 @@ namespace DungeonFarming.Controllers
             if (response.errorCode != ErrorCode.None)
             {
                 await _gameSessionDb.SetUserInfoSession(_gameSessionData);
+                return response;
             }
 
             response.errorCode = CheckItemNpcCount();
             if ( response.errorCode != ErrorCode.None)
             {
                 // 요청된 아이템수가 많거나, 몬스터 수가 일치 하지 않으면 세션을 초기화로 냅둔다 -> 게임 무효화.
+                // 로깅은 CheckItemNpcCount()에서 처리.
                 return response; 
             }
 

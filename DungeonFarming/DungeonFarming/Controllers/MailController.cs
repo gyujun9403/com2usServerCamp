@@ -31,19 +31,11 @@ namespace DungeonFarming.Controllers
             MailPreviewResponse response = new MailPreviewResponse();
 
             (response.errorCode, var mailPreviewList) = await _gameDb.GetMailListUp(_gameSessionData.userId, request.page * _mailsPerPage, _mailsPerPage);
-            if ((response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
-                || response.errorCode != ErrorCode.NoMail && mailPreviewList == null)
+            if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Mail,
-                    new {
-                        errorCode = response.errorCode,
-                        userId = request.userId,
-                        startIndex = request.page * _mailsPerPage,
-                        mailCount = _mailsPerPage,
-                        mailPreviewList = mailPreviewList },
-                    "GetMailPreview mail preview list get FAIL");
                 return response;
             }
+
             response.mailDataList = mailPreviewList;
             return response;
         }
@@ -54,17 +46,12 @@ namespace DungeonFarming.Controllers
             GetMailResponse response = new GetMailResponse();
 
             (response.errorCode, response.mail) = await _gameDb.OpenMail(_gameSessionData.userId, request.mailId);
-            if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
+            if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Mail,
-                    new { errorCode = response.errorCode, userId = request.userId, mailId = request.mailId, mail = response.mail }, 
-                    "mail get FAIL");
                 return response;
             }
-            _logger.ZLogInformationWithPayload( LogEventId.Mail,
-                        new { userId = request.userId, mailId = request.mailId },
-                        "GetMail mail get SUCCESS");
-
+            
+            _logger.ZLogInformationWithPayload( LogEventId.Mail, new { userId = _gameSessionData.userId, mailId = request.mailId }, "GetMail mail get SUCCESS");
             return response;
         }
 
@@ -73,13 +60,12 @@ namespace DungeonFarming.Controllers
         {
             RecvMailItemsResponse response = new RecvMailItemsResponse();
 
-            response.errorCode = await _gameDb.RecvMailItems(_gameSessionData.userId, request.mailId);
-            if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.Noitems)
+            (response.errorCode, var attachedItemList) = await _gameDb.RecvMailItems(_gameSessionData.userId, request.mailId);
+            if (response.errorCode == ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Mail, 
-                    new { errorCode = response.errorCode, userId = request.userId, mailId = request.mailId }, 
-                    "RecvMailItems mail get FAIL");
-                return response;
+                _logger.ZLogInformationWithPayload(LogEventId.Mail,
+                    new { userId = _gameSessionData.userId, mailId = request.mailId, itemList = attachedItemList }
+                    , "user mailItems recv SUCCESS");
             }
             return response;
         }
@@ -90,12 +76,9 @@ namespace DungeonFarming.Controllers
             DeleteMailResponse response = new DeleteMailResponse();
 
             response.errorCode = await _gameDb.DeleteMail(_gameSessionData.userId, request.mailId);
-            if (response.errorCode != ErrorCode.None && response.errorCode != ErrorCode.NoMail)
+            if (response.errorCode == ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Mail,
-                    new { errorCode = response.errorCode, userId = request.userId, mailId = request.mailId },
-                    "mail get FAIL");
-                return response;
+                _logger.ZLogInformationWithPayload(LogEventId.Mail, new { userId = _gameSessionData.userId, mailId = request.mailId }, "mail delete SUCCESS");
             }
             return response;
         }
