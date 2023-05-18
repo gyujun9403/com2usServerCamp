@@ -31,9 +31,9 @@ namespace DungeonFarming.Controllers
             (response.errorCode, var UserAchievement) = await _gameDb.GetUserAchivement(_gameSessionData.userId);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.UserAchivement, new { userId = request.userId, errorCode = response.errorCode }, "UserAchievement FAIL");
                 return response;
             }
+
             response.userLevel = UserAchievement.user_level;
             response.userExp = UserAchievement.user_exp;
             response.highestClearedStageId = UserAchievement.highest_cleared_stage_id;

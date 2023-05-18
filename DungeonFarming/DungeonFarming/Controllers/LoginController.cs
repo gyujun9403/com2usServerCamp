@@ -34,23 +34,14 @@ namespace DungeonFarming.Controllers
             LoginResponse response = new LoginResponse();
 
             // 계정 정보 가져오고 확인
-            var (rtErrorCode, userAccountTuple) = await _accountDb.GetAccountInfo(request.userId);
-            if (rtErrorCode != ErrorCode.None)
+            (response.errorCode, var userAccountTuple) = await _accountDb.GetAccountInfo(request.userId);
+            if (response.errorCode != ErrorCode.None)
             {
-                response.errorCode = rtErrorCode;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = rtErrorCode }, "Account db FAIL");
                 return response;
             }
-            else if (userAccountTuple == null)
+            else if (userAccountTuple == null || !userAccountTuple.pk_id.HasValue)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId}, "Account db userAccountTuple null FAIL");
-                return response;
-            }
-            else if (!userAccountTuple.pk_id.HasValue)
-            {
-                response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId }, "Account db pk id null FAIL");
                 return response;
             }
 
@@ -71,11 +62,9 @@ namespace DungeonFarming.Controllers
                 userId = userAccountTuple.pk_id.Value,
                 token = token,
                 userStatus = UserStatus.Login
-                // TODO: 게임 기능이 추가되면, 스테이지/몬스터 등의 게임 상태도 추가 할 것.
             });
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId , errorCode = response.errorCode }, "Account Session write FAIL");
                 return response;
             }
             response.token = token;
@@ -85,7 +74,6 @@ namespace DungeonFarming.Controllers
             if (response.errorCode != ErrorCode.None)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "Loginlog GetUserItemList FAIL");
                 return response;
             }
             response.userItems = userItems;

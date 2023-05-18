@@ -22,7 +22,7 @@ namespace DungeonFarming.DataBase.GameDb
         Task<ErrorCode> SendMail(Mail mail);
         Task<(ErrorCode, List<MailListElem>?)> GetMailListUp(Int64 userId, Int32 startIndex, Int32 mailCount);
         Task<(ErrorCode, Mail?)> OpenMail(Int64 userId, Int64 mailId);
-        Task<ErrorCode> RecvMailItems(Int64 userId, Int64 mailId);
+        Task<(ErrorCode, List<ItemBundle>? attachedItemList)> RecvMailItems(Int64 userId, Int64 mailId);
         Task<ErrorCode> DeleteMail(Int64 userId, Int64 mailId);
         // DungeonInfo
         Task<ErrorCode> RegistUserAchivement(Int64 userId);

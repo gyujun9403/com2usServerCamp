@@ -28,8 +28,10 @@ namespace DungeonFarming.DataBase.AccountDb
                     salt = model.salt,
                     hashed_password = model.hashed_password,
                 });
-                Int16 id = await _db.Query("user_accounts").Select("pk_id").Where("user_id", model.user_id).FirstOrDefaultAsync<Int16>();
-                //_logger.ZLogInformation($"[GetAccountInfo] Info : {model.user_id}");
+                Int16 id = await _db.Query("user_accounts")
+                    .Select("pk_id")
+                    .Where("user_id", model.user_id)
+                    .FirstOrDefaultAsync<Int16>();
                 _logger.ZLogInformationWithPayload(LogEventId.AccountDb, new { userId = model.user_id }, "RegisteUser SUCCESS");
                 return (ErrorCode.None, id);
             }
@@ -55,15 +57,13 @@ namespace DungeonFarming.DataBase.AccountDb
             {
                 var rt = await _db.Query("user_accounts")
                     .Select("pk_id", "user_id", "salt", "hashed_password")
-                    .Where("user_id", userId).FirstAsync<UserAccountDto>();
-                if (rt.pk_id == null || rt.user_id == ""
-                    || rt.salt.Length == 0 || rt.hashed_password.Length == 0)
+                    .Where("user_id", userId)
+                    .FirstAsync<UserAccountDto?>();
+                if (rt == null)
                 {
-                    //_logger.ZLogError($"[GetAccountInfo] Error : {userId} Invalid Id");
                     _logger.ZLogWarningWithPayload(LogEventId.AccountDb, new { userId = userId }, "GetAccountInfo Invalid Id FAIL");
                     return (ErrorCode.InvalidId, null);
                 }
-                //_logger.ZLogInformation($"[GetAccountInfo] Info : {userId}");
 
                 return (ErrorCode.None, rt);
             }

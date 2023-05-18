@@ -29,10 +29,60 @@ namespace DungeonFarming.Controllers
             _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
         }
 
+        [HttpPost]
+        public async Task<PackagePurchaseResponse> PackagePurchase(PackagePurchaseRequest request)
+        {
+            PackagePurchaseResponse response = new PackagePurchaseResponse();
+            response.packageListId = -1;
+            // 영수증 유효성 확인
+            if (CheckPurchaseValid(request.purchaseToken) == false)
+            {
+                response.errorCode = ErrorCode.InvalidPurchaseToken;
+                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token INVALID");
+                return response;
+            }
+
+            // 영수증 중복 확인
+            response.errorCode = await _purchaseDb.CheckPurchaseDuplicated(request.purchaseToken);
+            if (response.errorCode != ErrorCode.None)
+            {
+                return response;
+            }
+
+            // 패키지 번호 확인
+            List<ItemBundle>? itemBundle = _masterDataOffer.getPackageItemBundles(request.packageCode);
+            if (itemBundle == null)
+            {
+                response.errorCode = ErrorCode.InvalidPackageId;
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase package id INVALID");
+                return response;
+            }
+
+            // 구매 내역 입력
+            response.errorCode = await _purchaseDb.WritePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode);
+            if (response.errorCode != ErrorCode.None)
+            {
+                return response;
+            }
+
+            // 유저에게 메일로 전송
+            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(_gameSessionData.userId, request.packageCode, itemBundle));
+            if (response.errorCode != ErrorCode.None)
+            {
+                await _purchaseDb.DeletePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode); // rollback
+                return response;
+            }
+
+            _logger.ZLogInformationWithPayload(LogEventId.PackagePurchase, new { userId = _gameSessionData.userId }, "package purchase SUCCESS");
+            response.packageListId = request.packageCode;
+            return response;
+        }
+
         private bool CheckPurchaseValid(String purchaseToken)
         {
             // purchaseToken 포맷 검사
             // 구매 플랫폼으로 부터 purchaseToken이 유효한지 검사
+
             return true;
         }
 
@@ -63,56 +113,8 @@ namespace DungeonFarming.Controllers
             mail.mail_title = $"패키지 구매";
             mail.mail_text = $"구매하신 {PackageCode}번 패키지 아이템 입니다";
             mail.recieve_date = DateTime.Now;
-            mail.expiration_date = new DateTime(9999, 12, 31, 23, 59, 59); //TODO: 올바른 값이 들어가는지 확인
+            mail.expiration_date = new DateTime(9999, 12, 31, 23, 59, 59);
             return mail;
-        }
-
-        [HttpPost]
-        public async Task<PackagePurchaseResponse> PackagePurchase(PackagePurchaseRequest request)
-        {
-            PackagePurchaseResponse response = new PackagePurchaseResponse();
-            response.packageListId = -1;
-            // 영수증 유효성 확인
-            if (CheckPurchaseValid(request.purchaseToken) == false)
-            {
-                response.errorCode = ErrorCode.InvalidPurchaseToken;
-                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token INVALID");
-                return response;
-            }
-            // 영수증 중복 확인
-            var rtErrorCode = await _purchaseDb.CheckPurchaseDuplicated(request.purchaseToken);
-            if (rtErrorCode != ErrorCode.None)
-            {
-                response.errorCode = rtErrorCode;
-                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token DUPLICATED");
-                return response;
-            }
-            // 패키지 번호 확인
-            List<ItemBundle>? itemBundle = _masterDataOffer.getPackageItemBundles(request.packageCode);
-            if (itemBundle == null)
-            {
-                response.errorCode = ErrorCode.InvalidPackageId;
-                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase package id INVALID");
-                return response;
-            }
-            // 구매 내역 입력
-            rtErrorCode = await _purchaseDb.WritePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode);
-            if (rtErrorCode != ErrorCode.None)
-            {
-                response.errorCode = rtErrorCode;
-                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase purchase db write FAIL");
-                return response;
-            }
-            // 유저에게 메일로 전송
-            response.errorCode = await _gameDb.SendMail(GeneratePackagePurchaseMail(_gameSessionData.userId, request.packageCode, itemBundle));
-            if (response.errorCode != ErrorCode.None)
-            {
-                await _purchaseDb.DeletePurchase(_gameSessionData.userId, request.purchaseToken, request.packageCode);
-                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase mail send FAIL");
-                return response;
-            }
-            response.packageListId = request.packageCode;
-            return response;
         }
     }
 }
