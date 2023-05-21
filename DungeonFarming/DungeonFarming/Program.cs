@@ -6,6 +6,9 @@ using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.PurchaseDb;
 using DungeonFarming;
 
+// db구축 시간을 위한 딜레이.
+await Task.Delay(TimeSpan.FromSeconds(10));
+
 var builder = WebApplication.CreateBuilder(args);
 
 //builder.Host.ConfigureLogging();
@@ -27,11 +30,11 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 var masterDataOffer = app.Services.GetRequiredService<IMasterDataOffer>();
-//if (masterDataOffer.LoadMasterData() == false)
-//{ 
-//    app.Logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, new { }, "LoadMasterDatas FAIL");
-//    Environment.Exit(-1);
-//}
+if (masterDataOffer.LoadMasterData() == false)
+{
+    app.Logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, new { }, "LoadMasterDatas FAIL");
+    Environment.Exit(-1);
+}
 app.MapControllers();
 app.UseMiddleware<VersionCheckMiddleware>();
 app.UseMiddleware<AuthCheckMiddleware>();
