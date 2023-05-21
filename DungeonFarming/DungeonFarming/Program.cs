@@ -27,11 +27,11 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 var masterDataOffer = app.Services.GetRequiredService<IMasterDataOffer>();
-if (masterDataOffer.LoadMasterData() == false)
-{ 
-    app.Logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, new { }, "LoadMasterDatas FAIL");
-    Environment.Exit(-1);
-}
+//if (masterDataOffer.LoadMasterData() == false)
+//{ 
+//    app.Logger.ZLogCriticalWithPayload(LogEventId.MasterDataOffer, new { }, "LoadMasterDatas FAIL");
+//    Environment.Exit(-1);
+//}
 app.MapControllers();
 app.UseMiddleware<VersionCheckMiddleware>();
 app.UseMiddleware<AuthCheckMiddleware>();
