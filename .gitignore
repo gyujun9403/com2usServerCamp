@@ -398,6 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 # deployment
-*/mysql/data/*
+DungeonFarming/deployment/mysql/data/*
 */redis/data/*
 */api_server/log/*
