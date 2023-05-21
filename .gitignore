@@ -396,3 +396,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# deployment
+/mysql/data
+/redis/data
+/api_server/log
