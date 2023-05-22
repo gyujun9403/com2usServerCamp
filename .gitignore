@@ -401,3 +401,4 @@ FodyWeavers.xsd
 DungeonFarming/deployment/mysql/data/*
 */redis/data/*
 */api_server/log/*
+*.rdb
