@@ -15,10 +15,9 @@ services:
       retries: 3
       start_period: 20s
       timeout: 10s
-    # volumes:
-    #   - ./api_server/logs:/app/logs
-    #  - ./api_server/MainLog.log:/app/MainLog.log
-    #   - ./api_server/appsetting.json:/appsetting.json
+    volumes:
+      - ./api_server/logs:/app/logs
+      - ./api_server/appsetting.json:/app/appsetting.json
 
   dungeon_farming_rdb:
     image: mysql:8.0
@@ -32,7 +31,6 @@ services:
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/initdb.d:/docker-entrypoint-initdb.d
-    #platform: linux/arm64/v8
   
   dungeon_farming_sessiondb:
     image: redis:latest

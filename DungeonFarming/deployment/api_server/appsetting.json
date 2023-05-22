@@ -1,0 +1,23 @@
+{
+    "Logging": {
+      "LogLevel": {
+        "Default": "Information",
+        "Microsoft.AspNetCore": "Warning"
+      }
+    },
+    "ConnectionStrings": {
+      "Mysql_Account": "Host=dungeon_farming_rdb;Port=3306;User=gyeon;Password=1q2w3e4r;Database=df_account_db;SslMode=Required",
+      "Mysql_Game": "Host=dungeon_farming_rdb;Port=3306;User=gyeon;Password=1q2w3e4r;Database=df_game_db;SslMode=Required",
+      "Mysql_Purchase": "Host=dungeon_farming_rdb;Port=3306;User=gyeon;Password=1q2w3e4r;Database=df_purchase_history_db;SslMode=Required",
+      "Redis_GameSession": "dungeon_farming_sessiondb"
+    },
+    "Versions": {
+      "Master_Data": "v1.0.0",
+      "Client": "v1.0.0"
+    },
+    "GameConfigs": {
+      "Mails_per_Page": 20
+    },
+    "AllowedHosts": "*"
+  }
+  

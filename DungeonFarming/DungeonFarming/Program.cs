@@ -16,7 +16,7 @@ builder.Services.AddLogging(logging =>
 {
     logging.ClearProviders();
     logging.SetMinimumLevel(LogLevel.Debug);
-    logging.AddZLoggerFile("MainLog.log", options => { options.EnableStructuredLogging = true; });
+    logging.AddZLoggerFile("logs/mainLog.log", options => { options.EnableStructuredLogging = true; });
     logging.AddZLoggerRollingFile((dt, x) => $"logs/{dt.ToLocalTime():yyyy-MM-dd}_{x:000}.log", x => x.ToLocalTime().Date, 1024);
     logging.AddZLoggerConsole(options => { options.EnableStructuredLogging = true; });
 });
