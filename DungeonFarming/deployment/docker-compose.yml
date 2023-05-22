@@ -1,0 +1,49 @@
+version: '3'
+services:
+  dungeon_farming_api_server:
+    image: df_api_server_img:1.0.0
+    container_name: dungeon_farming_api_server
+    networks: 
+      - dungeon_farming_web_net
+    ports: 
+      - '80:80'
+    depends_on:
+      - dungeon_farming_sessiondb
+      - dungeon_farming_rdb
+    healthcheck:
+      interval: 60s
+      retries: 3
+      start_period: 20s
+      timeout: 10s
+    volumes:
+      - ./api_server/logs:/app/logs
+      - ./api_server/appsetting.json:/app/appsetting.json
+
+  dungeon_farming_rdb:
+    image: mysql:8.0
+    container_name: dungeon_farming_rdb
+    restart: always
+    env_file: .env
+    networks: 
+      - dungeon_farming_web_net
+    ports: 
+      - '3306:3306'
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/initdb.d:/docker-entrypoint-initdb.d
+  
+  dungeon_farming_sessiondb:
+    image: redis:latest
+    container_name: dungeon_farming_sessiondb
+    networks: 
+      - dungeon_farming_web_net
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redis/data:/data
+    #  - ./redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+
+networks:
+  dungeon_farming_web_net:
+    driver: bridge
+    name: dungeon_farming_web_net

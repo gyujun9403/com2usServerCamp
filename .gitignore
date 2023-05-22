@@ -396,3 +396,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# deployment
+DungeonFarming/deployment/mysql/data/*
+*/redis/data/*
+*/api_server/log/*
+*.rdb

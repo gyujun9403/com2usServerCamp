@@ -78,6 +78,7 @@ namespace DungeonFarming.Controllers
                 await _accountDb.DeleteAccount(request.userId);
                 await _gameDb.DeleteLoginLog(pkId);
                 response.errorCode = ErrorCode.ServerError;
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = pkId }, "getDefaultItemBundles Fail");
                 return response;
             }
 
