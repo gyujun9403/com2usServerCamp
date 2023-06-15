@@ -1,8 +1,7 @@
 ﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+namespace DungeonFarming.Controllers.ReqResModel;
 public class LoginRequest
 {
     [Required] public String userAssignedId { get; set; }

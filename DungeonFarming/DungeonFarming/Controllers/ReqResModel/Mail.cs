@@ -1,6 +1,7 @@
 ﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
 using System.ComponentModel.DataAnnotations;
 
+namespace DungeonFarming.Controllers.ReqResModel;
 public class MailPreviewRequest : RequestBase
 {
     [Required]

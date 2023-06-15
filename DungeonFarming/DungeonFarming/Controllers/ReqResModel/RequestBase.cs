@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+namespace DungeonFarming.Controllers.ReqResModel;
 public class RequestBase
 {
     [Required] public String userAssignedId { get; set; }

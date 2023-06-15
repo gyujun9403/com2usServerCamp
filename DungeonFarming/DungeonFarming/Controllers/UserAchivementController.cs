@@ -1,6 +1,6 @@
-﻿using DungeonFarming.DataBase.GameDb;
+﻿using DungeonFarming.Controllers.ReqResModel;
+using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameSessionDb;
-using DungeonFarming.ReqResDTO;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DungeonFarming.Controllers

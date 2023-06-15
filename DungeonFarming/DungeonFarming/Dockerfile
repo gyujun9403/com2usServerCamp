@@ -8,6 +8,6 @@ RUN dotnet publish -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /App
 COPY ./entrypoint.sh ./app/
-COPY --from=build-env /App/out .
 RUN chmod +x ./app/entrypoint.sh
+COPY --from=build-env /App/out .
 ENTRYPOINT ["./app/entrypoint.sh"]

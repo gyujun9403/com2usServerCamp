@@ -1,4 +1,4 @@
-﻿using System;
+﻿namespace DungeonFarming;
 
 public enum ErrorCode : Int16
 {
