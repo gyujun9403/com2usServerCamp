@@ -1,5 +1,5 @@
 ﻿using DungeonFarming.DataBase.GameDb;
-using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameDb.GameDbModel;
 using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DataBase.PurchaseDb;
 using DungeonFarming.DTO;
@@ -26,7 +26,7 @@ namespace DungeonFarming.Controllers
             _purchaseDb = purchaseDb;
             _gameDb = gameDb;
             _masterDataOffer = masterDataOffer;
-            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["userSession"] as GameSessionData;
         }
 
         [HttpPost]
@@ -38,7 +38,7 @@ namespace DungeonFarming.Controllers
             if (CheckPurchaseValid(request.purchaseToken) == false)
             {
                 response.errorCode = ErrorCode.InvalidPurchaseToken;
-                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token INVALID");
+                _logger.ZLogWarningWithPayload(LogEventId.PackagePurchase, new { userAssignedId = request.userAssignedId, purchaseToken = request.purchaseToken }, "PackagePurchase purchase token INVALID");
                 return response;
             }
 
@@ -54,7 +54,7 @@ namespace DungeonFarming.Controllers
             if (itemBundle == null)
             {
                 response.errorCode = ErrorCode.InvalidPackageId;
-                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userId = request.userId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase package id INVALID");
+                _logger.ZLogErrorWithPayload(LogEventId.PackagePurchase, new { userAssignedId = request.userAssignedId, packageCode = request.packageCode, purchaseToken = request.purchaseToken }, "PackagePurchase package id INVALID");
                 return response;
             }
 
@@ -73,7 +73,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
 
-            _logger.ZLogInformationWithPayload(LogEventId.PackagePurchase, new { userId = _gameSessionData.userId }, "package purchase SUCCESS");
+            _logger.ZLogInformationWithPayload(LogEventId.PackagePurchase, new { userAssignedId = _gameSessionData.userAssignedId }, "package purchase SUCCESS");
             response.packageListId = request.packageCode;
             return response;
         }

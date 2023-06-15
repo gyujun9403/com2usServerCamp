@@ -1,5 +1,5 @@
 ﻿using DungeonFarming.DataBase.GameDb;
-using DungeonFarming.DataBaseServices.GameDb.MasterDataDTO;
+using DungeonFarming.DataBase.GameDb.GameDbModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace DungeonFarming.ReqResDTO
@@ -10,29 +10,23 @@ namespace DungeonFarming.ReqResDTO
 
     public class NpcBundle
     {
-        public Int64 npcCode { get; set; }
-        public Int64 npcCount { get; set; }
+        public Int32 npcCode { get; set; }
+        public Int32 npcCount { get; set; }
     }
-    //public class DunGeonDetailedInfo
-    //{
-    //    public Int64 dungeonId { get; set; }
-    //    public bool isClear { get; set; }
-    //    public List<ItemBundle>? rewardItemBundles { get; set; }
-    //}
 
     public class LastClearedStageResponse : ResponseBase
     {
-        public Int64 maxClearedStageCode { get; set; }
+        public Int32 maxClearedStageCode { get; set; }
     }
 
     public class EnterStageRequest : RequestBase
     {
-        [Required] public Int64 stageId { get; set; }
+        [Required] public Int32 stageId { get; set; }
     }
 
     public class EnterStageResponse : ResponseBase
     {
-        public Int64 stageId { get; set; }
+        public Int32 stageId { get; set; }
         public bool isEnterable { get; set; } = false;
         public List<StageNpcInfo>? npcBundles { get; set; }
         public List<ItemBundle>? rewardItemBundles { get; set; }

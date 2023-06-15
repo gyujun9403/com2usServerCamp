@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
+using System.ComponentModel.DataAnnotations;
 
 public class MailPreviewRequest : RequestBase
 {

@@ -1,4 +1,4 @@
-﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace DungeonFarming.DTO

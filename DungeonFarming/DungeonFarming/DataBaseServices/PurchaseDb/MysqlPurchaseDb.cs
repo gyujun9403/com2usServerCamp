@@ -46,7 +46,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
                 return ErrorCode.purchaseDbError;
             }
         }
-        public async Task<ErrorCode> WritePurchase(long userId, string purchaseToken, short packageCode)
+        public async Task<ErrorCode> WritePurchase(Int64 userId, string purchaseToken, short packageCode)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace DungeonFarming.DataBase.PurchaseDb
             }
         }
 
-        public async Task<ErrorCode> DeletePurchase(long userId, string purchaseToken, short packageCode)
+        public async Task<ErrorCode> DeletePurchase(Int64 userId, string purchaseToken, short packageCode)
         {
             try
             {

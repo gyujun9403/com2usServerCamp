@@ -20,48 +20,57 @@ namespace DungeonFarming.Middleware
         public async Task Invoke(HttpContext context)
         {
             String path = context.Request.Path;
-            if (!(path.StartsWith("/Regist") || path.StartsWith("/Login")))
+            if (path.StartsWith("/Regist") || path.StartsWith("/Login"))
             {
-                context.Request.EnableBuffering();
-                using (var streamReader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
-                {
-                    var requestBody = await streamReader.ReadToEndAsync(); // 요청 본문을 문자열로 읽어옵니다.
-                    // 요청 body에 id, token이 있는지 확인하고, 있는 경우 찾아서 반환.
-                    var (userId, token) = await CheckBodyFormAndGetIdToken(context, requestBody);
-
-                    if (userId == null || token == null)
-                    {
-                        return;
-                    }
-                    if (await CheckTokenAndSetSessionDataInContext(context, userId, token) == false)
-                    {
-                        return;
-                    }
-                }
-                context.Request.Body.Position = 0;
+                await _next(context);
+                return;
             }
-            await _next(context);
-            //응답 로직
-        }
 
-        private async Task<(String?, String?)> CheckBodyFormAndGetIdToken(HttpContext context, String? body)
-        {
-            if (String.IsNullOrEmpty(body))
+            context.Request.EnableBuffering();
+            using var streamReader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true);
+            var requestBody = await streamReader.ReadToEndAsync();
+            if (String.IsNullOrEmpty(requestBody))
             {
                 _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http Body NULLorEMPTY");
                 await SetContext(context, 400, ErrorCode.InvalidBodyForm);
-                return (null, null);
+                return ;
             }
+
+            var (userAssignedId, requestToken) = await GetIdToken(context, requestBody);
+            if (userAssignedId == null || requestToken == null)
+            {
+                return;
+            }
+
+            var userSession = await GetUserSession(userAssignedId);
+            if (userSession == null)
+            {
+                return;
+            }
+            if (userSession.token != requestToken)
+            {
+                await SetContext(context, 400, ErrorCode.InvalidToken);
+                return ;
+            }
+
+            context.Items["userSession"] = userSession;
+            context.Request.Body.Position = 0;
+            
+            await _next(context);
+        }
+
+        private async Task<(String?, String?)> GetIdToken(HttpContext context, String requestBody)
+        {
             try
             {
-                var doc = JsonDocument.Parse(body);
+                var doc = JsonDocument.Parse(requestBody);
                 if (doc == null)
                 {
                     _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http Body UNPARSINGABLE");
                     await SetContext(context, 400, ErrorCode.InvalidBodyForm);
                     return (null, null);
                 }
-                else if (doc.RootElement.TryGetProperty("userId", out var id))
+                else if (doc.RootElement.TryGetProperty("userAssignedId", out var id))
                 {
                     if (doc.RootElement.TryGetProperty("token", out var token))
                     {
@@ -70,37 +79,22 @@ namespace DungeonFarming.Middleware
                 }
                 return (null, null);
             }
-            catch(FormatException ex)
+            catch (Exception ex) 
             {
-                _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, Exception = ex }, "Http Body FormatEXCEPTION");
-                await SetContext(context, 400, ErrorCode.InvalidBodyForm);
-                return (null, null);
-            }
-            catch
-            {
-                _logger.ZLogErrorWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path }, "Http SERVERERROR");
+                _logger.ZLogWarningWithPayload(LogEventId.AuthCheck, ex, new { Path = context.Request.Path }, "Http ");
                 await SetContext(context, 500, ErrorCode.ServerError);
                 return (null, null);
             }
         }
 
-        private async Task<bool> CheckTokenAndSetSessionDataInContext(HttpContext context, String userId, String inputToken)
+        async Task<GameSessionData?> GetUserSession(String userAssignedId)
         {
-            var (errorCode, userInfo) = await _gameSessionDb.GetUserInfoSession(userId);
+            var (errorCode, userInfo) = await _gameSessionDb.GetUserInfoSession(userAssignedId);
             if (errorCode != ErrorCode.None || userInfo == null)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, ErrorCode = errorCode }, "Session FAIL");
-                await SetContext(context, 400, errorCode);
-                return false;
+                return null;
             }
-            if (userInfo.token != inputToken)
-            {
-                _logger.ZLogInformationWithPayload(LogEventId.AuthCheck, new { Path = context.Request.Path, userId = userId }, "Token Check FAIL");
-                await SetContext(context, 400, ErrorCode.InvalidToken);
-                return false;
-            }
-            context.Items["gameSessionData"] = userInfo;
-            return true;
+            return userInfo;
         }
 
         private async Task SetContext(HttpContext context, Int32 statusCode, ErrorCode errorCode)

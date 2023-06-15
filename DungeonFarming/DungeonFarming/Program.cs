@@ -6,12 +6,8 @@ using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.PurchaseDb;
 using DungeonFarming;
 
-// db구축 시간을 위한 딜레이.
-await Task.Delay(TimeSpan.FromSeconds(10));
-
 var builder = WebApplication.CreateBuilder(args);
 
-//builder.Host.ConfigureLogging();
 builder.Services.AddLogging(logging =>
 {
     logging.ClearProviders();

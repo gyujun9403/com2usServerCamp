@@ -1,11 +1,8 @@
-﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
-using DungeonFarming.DataBaseServices.GameDb.GameUserDataDTO;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
 using MySqlConnector;
 using SqlKata;
 using SqlKata.Compilers;
 using SqlKata.Execution;
-using System.Reflection.PortableExecutable;
-using System.Xml;
 using ZLogger;
 
 namespace DungeonFarming.DataBase.GameDb;
@@ -222,7 +219,6 @@ public class MysqlGameDb : IGameDb
         }
     }
 
-    // 누적 아이템의 카운트는, 위에서 알아서 검증 할 것.
     async Task<ErrorCode> IncreaseUserItemCount(Int64 userId, List<(ItemBundle IncreaseData, UserItem backupData)> updateItemBundleWithBackup)
     {
         List<UserItem> backupUserItemList = new List<UserItem>();
@@ -333,7 +329,7 @@ public class MysqlGameDb : IGameDb
                 .Where("user_id", userId)
                 .Where("is_deleted", 0)
                 .Where("expiration_date", ">", DateTime.Now);
-            Mail? mail = await MailQuery.Select("*").FirstAsync<Mail>();
+            Mail? mail = await MailQuery.Select("*").FirstOrDefaultAsync<Mail>();
             if (mail == null)
             {
                 _logger.ZLogErrorWithPayload(LogEventId.GameDb, new { userId = userId, mailId = mailId }, "OpenMail invalid mailId");
@@ -434,9 +430,7 @@ public class MysqlGameDb : IGameDb
         }
     }
 
-    // Dungeon
-
-    public async Task<ErrorCode> RegistUserAchivement(long userId)
+    public async Task<ErrorCode> RegistUserAchivement(Int64 userId)
     {
         try
         {
@@ -445,7 +439,7 @@ public class MysqlGameDb : IGameDb
                     user_id = userId,
                     user_level = 1,
                     user_exp = 0,
-                    highest_cleared_stage_id = -1
+                    highest_cleared_stage_id = 0
                 });
             return ErrorCode.None;
         }
@@ -679,9 +673,9 @@ public class MysqlGameDb : IGameDb
         foreach (var bundle in stackableItemBundle)
         {
             var (rtErrorCode, userItem) = await ReadItemBundleFromUserItems(userId, bundle);
-            if (rtErrorCode != ErrorCode.None || (rtErrorCode == ErrorCode.None && userItem == null))
+            if (rtErrorCode != ErrorCode.None)
             {
-
+                return (rtErrorCode, null, null);
             }
             else if (userItem == null)
             {

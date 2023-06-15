@@ -1,11 +1,10 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
-using DungeonFarming.DataBase.GameDb.MasterData;
-using DungeonFarming.DataBaseServices.GameDb.MasterDataDTO;
+using DungeonFarming.DataBase.GameDb.GameDbModel;
+using DungeonFarming.DataBase.GameDb.MasterDataModel;
+using DungeonFarming.DataBaseServices.GameDb.MasterDataModel;
 using MySqlConnector;
 using SqlKata.Compilers;
 using SqlKata.Execution;
-using System.Reflection.Emit;
-using System.Security.Principal;
 using ZLogger;
 
 namespace DungeonFarming.DataBase.GameDb
@@ -20,9 +19,7 @@ namespace DungeonFarming.DataBase.GameDb
         Dictionary<Int16, DefaultItems> _defaultItemsList = new Dictionary<Int16, DefaultItems>();
         Dictionary<Int64, ItemDefine> _itemDefines = new Dictionary<Int64, ItemDefine>();
         Dictionary<Int32, Int64> _expPerUserLevel = new Dictionary<Int32, Int64>();
-        //Dictionary<Int64, List<ItemBundle> > _stageItemLists = new Dictionary<Int64, List<ItemBundle>>();
         Dictionary<Int64, Dictionary<Int64, ItemBundle>> _stageItemDics = new Dictionary<Int64, Dictionary<Int64, ItemBundle>>();
-        //Dictionary<Int64, List<StageNpcInfo>> _stageNpcLists = new Dictionary<Int64, List<StageNpcInfo>>();
         Dictionary<Int64, Dictionary<Int64, StageNpcInfo>> _stageNpcDics = new Dictionary<Int64, Dictionary<Int64, StageNpcInfo>>();
         Dictionary<Int64, StageInfo> _stageInfos = new Dictionary<Int64, StageInfo>();
 
@@ -181,7 +178,7 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public List<ItemBundle>? getStageItemInfoList(Int64 stageCode)
+        public List<ItemBundle>? getStageItemInfoList(Int32 stageCode)
         {
             if (_stageItemDics.ContainsKey(stageCode))
             {
@@ -190,7 +187,7 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int64 stageCode)
+        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int32 stageCode)
         {
             if (_stageItemDics.ContainsKey(stageCode))
             {
@@ -199,7 +196,7 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public List<StageNpcInfo>? getStageNpcInfoList(Int64 stageCode)
+        public List<StageNpcInfo>? getStageNpcInfoList(Int32 stageCode)
         {
             if (_stageNpcDics.ContainsKey(stageCode))
             {
@@ -208,7 +205,7 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int64 stageCode)
+        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int32 stageCode)
         {
             if (_stageNpcDics.ContainsKey(stageCode))
             {
@@ -217,7 +214,7 @@ namespace DungeonFarming.DataBase.GameDb
             return null;
         }
 
-        public StageInfo? getStageInfo(Int64 stageCode)
+        public StageInfo? getStageInfo(Int32 stageCode)
         {
             if (_stageInfos.ContainsKey(stageCode))
             {

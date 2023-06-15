@@ -20,14 +20,14 @@ namespace DungeonFarming.Controllers
         public async Task<LogoutResponse> Logout(LogoutRequest request)
         {
             LogoutResponse response = new LogoutResponse();
-            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userId);
+            response.errorCode = await _gameSessionDb.DeleteUserInfoSession(request.userAssignedId);
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Logout, new { userid = request.userId, ErrorCode = response.errorCode }, "user logout FAIL");
+                _logger.ZLogErrorWithPayload(LogEventId.Logout, new { userAssignedId = request.userAssignedId, ErrorCode = response.errorCode }, "user logout FAIL");
             }
             else
             {
-                _logger.ZLogInformationWithPayload(LogEventId.Logout, new { userid = request.userId }, "user logout Success");
+                _logger.ZLogInformationWithPayload(LogEventId.Logout, new { userAssignedId = request.userAssignedId }, "user logout Success");
             }
 
             return response;

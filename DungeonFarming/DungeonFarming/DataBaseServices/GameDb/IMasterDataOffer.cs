@@ -1,5 +1,6 @@
-﻿using DungeonFarming.DataBase.GameDb.MasterData;
-using DungeonFarming.DataBaseServices.GameDb.MasterDataDTO;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
+using DungeonFarming.DataBase.GameDb.MasterDataModel;
+using DungeonFarming.DataBaseServices.GameDb.MasterDataModel;
 
 namespace DungeonFarming.DataBase.GameDb
 {
@@ -15,10 +16,10 @@ namespace DungeonFarming.DataBase.GameDb
         public List<ItemBundle>? getDefaultItemBundles(Int16 listCode);
         public ItemDefine? getItemDefine(Int64 itemCode);
         public Int64? getMaxExpOfLevel(Int32 level);
-        public List<ItemBundle>? getStageItemInfoList(Int64 stageCode);
-        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int64 stageCode);
-        public List<StageNpcInfo>? getStageNpcInfoList(Int64 stageCode);
-        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int64 stageCode);
-        public StageInfo? getStageInfo(Int64 stageCode);
+        public List<ItemBundle>? getStageItemInfoList(Int32 stageCode);
+        public Dictionary<Int64, ItemBundle>? getStageItemInfoDic(Int32 stageCode);
+        public List<StageNpcInfo>? getStageNpcInfoList(Int32 stageCode);
+        public Dictionary<Int64, StageNpcInfo>? getStageNpcInfoDic(Int32 stageCode);
+        public StageInfo? getStageInfo(Int32 stageCode);
     }
 }

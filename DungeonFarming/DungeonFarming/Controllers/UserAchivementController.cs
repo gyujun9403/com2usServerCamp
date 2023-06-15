@@ -1,10 +1,7 @@
 ﻿using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameSessionDb;
-using DungeonFarming.DataBaseServices.GameDb.GameUserDataDTO;
 using DungeonFarming.ReqResDTO;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZLogger;
 
 namespace DungeonFarming.Controllers
 {
@@ -20,7 +17,7 @@ namespace DungeonFarming.Controllers
         {
             _gameDb = gameDb;
             _logger = logger;
-            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["userSession"] as GameSessionData;
         }
 
         [HttpPost]
