@@ -22,7 +22,7 @@ namespace DungeonFarming.Controllers
             _logger = logger;
             _gameDb = gameDb;
             _mailsPerPage = config.GetSection("GameConfigs").GetValue<Int16>("Mails_per_Page");
-            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["userSession"] as GameSessionData;
         }
 
         [HttpPost("ListUpMail")]
@@ -51,7 +51,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             
-            _logger.ZLogInformationWithPayload( LogEventId.Mail, new { userId = _gameSessionData.userId, mailId = request.mailId }, "GetMail mail get SUCCESS");
+            _logger.ZLogInformationWithPayload( LogEventId.Mail, new { userAssignedId = _gameSessionData.userAssignedId, mailId = request.mailId }, "GetMail mail get SUCCESS");
             return response;
         }
 
@@ -64,7 +64,7 @@ namespace DungeonFarming.Controllers
             if (response.errorCode == ErrorCode.None)
             {
                 _logger.ZLogInformationWithPayload(LogEventId.Mail,
-                    new { userId = _gameSessionData.userId, mailId = request.mailId, itemList = attachedItemList }
+                    new { userAssignedId = _gameSessionData.userAssignedId, mailId = request.mailId, itemList = attachedItemList }
                     , "user mailItems recv SUCCESS");
             }
             return response;
@@ -78,7 +78,7 @@ namespace DungeonFarming.Controllers
             response.errorCode = await _gameDb.DeleteMail(_gameSessionData.userId, request.mailId);
             if (response.errorCode == ErrorCode.None)
             {
-                _logger.ZLogInformationWithPayload(LogEventId.Mail, new { userId = _gameSessionData.userId, mailId = request.mailId }, "mail delete SUCCESS");
+                _logger.ZLogInformationWithPayload(LogEventId.Mail, new { userAssignedId = _gameSessionData.userAssignedId, mailId = request.mailId }, "mail delete SUCCESS");
             }
             return response;
         }

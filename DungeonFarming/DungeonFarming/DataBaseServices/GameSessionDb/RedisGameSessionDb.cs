@@ -18,49 +18,49 @@ namespace DungeonFarming.DataBase.GameSessionDb
             _logger = logger;
         }
 
-        String GenerateUserInfoSessionKey(String userId)
+        String GenerateUserInfoSessionKey(String userAssignedId)
         {
-            return "userInfo:" + userId;
+            return "userInfo:" + userAssignedId;
         }
 
-        public async Task<ErrorCode> DeleteUserInfoSession(String userId)
+        public async Task<ErrorCode> DeleteUserInfoSession(String userAssignedId)
         {
             try
             {
-                var keyString = GenerateUserInfoSessionKey(userId);
+                var keyString = GenerateUserInfoSessionKey(userAssignedId);
                 var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, null);
                 var result = await redisString.GetAndDeleteAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userId = userId }, "DeleteUserInfoSession Invalid Id FAIL");
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userAssignedId = userAssignedId }, "DeleteSession Invalid Id FAIL");
                     return ErrorCode.InvalidToken;
                 }
                 return ErrorCode.None;
             }
             catch (Exception ex)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userId = userId }, "DeleteUserInfoSession EXCEPTION");
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userAssignedId = userAssignedId }, "DeleteSession EXCEPTION");
                 return ErrorCode.GameSessionDbError;
             }
         }
 
-        public async Task<(ErrorCode, GameSessionData?)> GetUserInfoSession(String userId)
+        public async Task<(ErrorCode, GameSessionData?)> GetUserInfoSession(String userAssignedId)
         {
             try
             {
-                var keyString = GenerateUserInfoSessionKey(userId);
+                var keyString = GenerateUserInfoSessionKey(userAssignedId);
                 var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
                 var result = await redisString.GetAsync();
                 if (result.HasValue == false)
                 {
-                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userId = userId }, "GetUserInfoSession Invalid Id FAIL");
+                    _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, new { userAssignedId = userAssignedId }, "GetUserInfoSession Invalid Id FAIL");
                     return (ErrorCode.InvalidId, null);
                 }
                 return (ErrorCode.None, result.Value);
             }
             catch(Exception ex)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userId = userId }, "GetUserInfoSession EXCEPTION");
+                _logger.ZLogErrorWithPayload(LogEventId.GameSessionDb, ex, new { userAssignedId = userAssignedId }, "GetUserInfoSession EXCEPTION");
                 return (ErrorCode.GameSessionDbError, null);
             }
         }
@@ -69,7 +69,7 @@ namespace DungeonFarming.DataBase.GameSessionDb
         {
             try
             {
-                var keyString = GenerateUserInfoSessionKey(userInfo.userStringId);
+                var keyString = GenerateUserInfoSessionKey(userInfo.userAssignedId);
                 var redisString = new RedisString<GameSessionData>(_redisConnection, keyString, TimeSpan.FromHours(1));
                 if (await redisString.SetAsync(userInfo, TimeSpan.FromHours(1)) == true)
                 {

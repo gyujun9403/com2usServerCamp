@@ -29,16 +29,16 @@ namespace DungeonFarming.Controllers
             RegisterResponse response = new RegisterResponse();
 
             var (saltBytes, hashedPasswordBytes) = Security.GetSaltAndHashedPassword(request.password);
-            (response.errorCode, var pkId) = await _accountDb.RegisteUser(new UserAccountDto
+            (response.errorCode, var userId) = await _accountDb.RegisteUser(new UserAccountDto
                 {
-                    pk_id = null,
-                    user_id = request.userId,
+                    user_id = null,
+                    user_assigned_id = request.userAssignedId,
                     salt = saltBytes,
                     hashed_password = hashedPasswordBytes
                 });
             if (response.errorCode != ErrorCode.None)
             {
-                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = request.userId , ErrorCode = response.errorCode }, "Registration FAIL");
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userAssignedId = request.userAssignedId , ErrorCode = response.errorCode }, "Registration FAIL");
                 return response;
             }
             else if (response.errorCode == ErrorCode.DuplicatedId)
@@ -47,10 +47,10 @@ namespace DungeonFarming.Controllers
             }
 
             // 0. GameDb에 유저를 등록한다.
-            response.errorCode = await _gameDb.RegisUserLoginLog(pkId);
+            response.errorCode = await _gameDb.RegisUserLoginLog(userId);
             if (response.errorCode != ErrorCode.None)
             {
-                await _accountDb.DeleteAccount(request.userId);
+                await _accountDb.DeleteAccount(request.userAssignedId);
                 if (response.errorCode != ErrorCode.DuplicatedId)
                 {
                     response.errorCode = ErrorCode.ServerError;
@@ -59,10 +59,10 @@ namespace DungeonFarming.Controllers
             }
 
             // 0. 유저의 게임 정보 세팅
-            response.errorCode = await _gameDb.RegistUserAchivement(pkId);
+            response.errorCode = await _gameDb.RegistUserAchivement(userId);
             if (response.errorCode != ErrorCode.None)
             {
-                await _accountDb.DeleteAccount(request.userId);
+                await _accountDb.DeleteAccount(request.userAssignedId);
                 if (response.errorCode != ErrorCode.DuplicatedId)
                 {
                     response.errorCode = ErrorCode.ServerError;
@@ -75,25 +75,25 @@ namespace DungeonFarming.Controllers
             var itemBundle = _masterDataOffer.getDefaultItemBundles(0);
             if (itemBundle == null)
             {
-                await _accountDb.DeleteAccount(request.userId);
-                await _gameDb.DeleteLoginLog(pkId);
+                await _accountDb.DeleteAccount(request.userAssignedId);
+                await _gameDb.DeleteLoginLog(userId);
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = pkId }, "getDefaultItemBundles Fail");
+                _logger.ZLogErrorWithPayload(LogEventId.Regist, new { userId = userId }, "getDefaultItemBundles Fail");
                 return response;
             }
 
             // 2. 유저의 인벤토리에 기본 지급 아이템들을 지급한다.
             //지급 실패시 GameDb에 유저 제거
-            var (rtErrorCode, insertedkey) = await _gameDb.InsertUserItemsByItemBundles(pkId, itemBundle);
+            var (rtErrorCode, insertedkey) = await _gameDb.InsertUserItemsByItemBundles(userId, itemBundle);
             if (rtErrorCode != ErrorCode.None)
             {
-                await _accountDb.DeleteAccount(request.userId);
-                await _gameDb.DeleteLoginLog(pkId);
+                await _accountDb.DeleteAccount(request.userAssignedId);
+                await _gameDb.DeleteLoginLog(userId);
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
 
-            _logger.ZLogInformationWithPayload(LogEventId.Regist, new { userId = request.userId }, "User Regist SUCCESS");
+            _logger.ZLogInformationWithPayload(LogEventId.Regist, new { userAssignedId = request.userAssignedId }, "User Regist SUCCESS");
             return response;
         }
     }

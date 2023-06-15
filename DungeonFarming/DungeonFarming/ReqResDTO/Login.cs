@@ -1,11 +1,11 @@
-﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 public class LoginRequest
 {
-    [Required] public String userId { get; set; }
+    [Required] public String userAssignedId { get; set; }
     [Required] public String password { get; set; }
     [Required] public String clientVersion { get; set; }
     [Required] public String masterDataVersion { get; set; }

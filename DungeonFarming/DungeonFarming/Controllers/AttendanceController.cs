@@ -1,6 +1,6 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb;
-using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameDb.GameDbModel;
 using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DTO;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +23,7 @@ namespace DungeonFarming.Controllers
             _gameDb = gameDb;
             _logger = logger;
             _masterDataOffer = masterDataOffer;
-            _gameSessionData = httpContextAccessor.HttpContext.Items["gameSessionData"] as GameSessionData;
+            _gameSessionData = httpContextAccessor.HttpContext.Items["userSession"] as GameSessionData;
         }
 
         [HttpPost]
@@ -44,7 +44,7 @@ namespace DungeonFarming.Controllers
             else if (loginLog == null)
             {
                 response.errorCode = ErrorCode.ServerError;
-                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, errorCode = response.errorCode }, "UpdateAndGetLoginLog return Invalid Values");
+                _logger.ZLogErrorWithPayload(LogEventId.Login, new { userAssignedId = request.userAssignedId, errorCode = response.errorCode }, "UpdateAndGetLoginLog return Invalid Values");
                 return response;
             }
 
@@ -56,7 +56,7 @@ namespace DungeonFarming.Controllers
                 return response;
             }
             response.attendanceStack = loginLog.consecutive_login_count;
-            _logger.ZLogErrorWithPayload(LogEventId.Login, new { userId = request.userId, loginLog = loginLog }, "Loginlog SendMail SUCCESS");
+            _logger.ZLogErrorWithPayload(LogEventId.Login, new { userAssignedId = request.userAssignedId, loginLog = loginLog }, "Loginlog SendMail SUCCESS");
             return response;
         }
 

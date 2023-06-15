@@ -1,6 +1,6 @@
 ﻿using DungeonFarming.DataBase.AccountDb;
 using DungeonFarming.DataBase.GameDb;
-using DungeonFarming.DataBase.GameDb.GameUserDataORM;
+using DungeonFarming.DataBase.GameDb.GameDbModel;
 using DungeonFarming.DataBase.GameSessionDb;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -34,12 +34,12 @@ namespace DungeonFarming.Controllers
             LoginResponse response = new LoginResponse();
 
             // 계정 정보 가져오고 확인
-            (response.errorCode, var userAccountTuple) = await _accountDb.GetAccountInfo(request.userId);
+            (response.errorCode, var userAccountTuple) = await _accountDb.GetAccountInfo(request.userAssignedId);
             if (response.errorCode != ErrorCode.None)
             {
                 return response;
             }
-            else if (userAccountTuple == null || !userAccountTuple.pk_id.HasValue)
+            else if (userAccountTuple == null || !userAccountTuple.user_id.HasValue)
             {
                 response.errorCode = ErrorCode.ServerError;
                 return response;
@@ -50,7 +50,7 @@ namespace DungeonFarming.Controllers
                     userAccountTuple.hashed_password) == false)
             {
                 response.errorCode = ErrorCode.WorngPassword;
-                _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId}, "login password FAIL");
+                _logger.ZLogInformationWithPayload(LogEventId.Login, new { userAssignedId = request.userAssignedId}, "login password FAIL");
                 return response;
             }
 
@@ -58,8 +58,8 @@ namespace DungeonFarming.Controllers
             String token = Security.GenerateToken();
             response.errorCode = await _gameSessionDb.SetUserInfoSession(new GameSessionData
             {
-                userStringId = request.userId,
-                userId = userAccountTuple.pk_id.Value,
+                userAssignedId = request.userAssignedId,
+                userId = userAccountTuple.user_id.Value,
                 token = token,
                 userStatus = UserStatus.Login
             });
@@ -70,14 +70,14 @@ namespace DungeonFarming.Controllers
             response.token = token;
 
             // 2. 유저 장비 정보를 가져옴
-            (response.errorCode, var userItems) = await _gameDb.GetUserItemList(userAccountTuple.pk_id.Value);
+            (response.errorCode, var userItems) = await _gameDb.GetUserItemList(userAccountTuple.user_id.Value);
             if (response.errorCode != ErrorCode.None)
             {
                 response.errorCode = ErrorCode.ServerError;
                 return response;
             }
             response.userItems = userItems;
-            _logger.ZLogInformationWithPayload(LogEventId.Login, new { userId = request.userId}, "Login SUCCESS");
+            _logger.ZLogInformationWithPayload(LogEventId.Login, new { userAssignedId = request.userAssignedId}, "Login SUCCESS");
             return response;
         }
     }

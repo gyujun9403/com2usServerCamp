@@ -1,17 +1,16 @@
-﻿using DungeonFarming.DataBase.GameDb.GameUserDataORM;
-using DungeonFarming.DataBase.GameDb.MasterData;
-using DungeonFarming.DataBaseServices.GameDb.GameUserDataDTO;
+﻿using DungeonFarming.DataBase.GameDb.GameDbModel;
+using DungeonFarming.DataBase.GameDb.MasterDataModel;
 
 namespace DungeonFarming.DataBase.GameDb
 {
     public interface IGameDb
     {
-        // regist and Login (Auth)
+        // User Login
         Task<ErrorCode> RegisUserLoginLog(Int64 userId);
         Task<(ErrorCode, LoginLog?)> UpdateAndGetLoginLog(Int64 userId);
         Task<(ErrorCode, LoginLog?)> GetLoginLog(Int64 userId);
         Task<ErrorCode> DeleteLoginLog(Int64 userId);
-        // UserItem
+        // User Items
         Task<(ErrorCode, List<Int64>? insertedKeys)> InsertUserItemsByItemBundles(Int64 userId, List<ItemBundle> itemBundleList);
         Task<(ErrorCode, List<UserItem>?)> GetUserItemList(Int64 userId);
         Task<(ErrorCode, UserItem?)> GetUserItem(Int64 userId, Int64 itemId);

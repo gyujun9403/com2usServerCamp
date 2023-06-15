@@ -1,17 +1,14 @@
-﻿
-using DungeonFarming.DataBase.GameDb;
-using System.ComponentModel.DataAnnotations;
-
+﻿namespace DungeonFarming.DataBase.GameDb.GameDbModel;
 public class MailListElem
 {
     public Int64 mail_id { get; set; }
-    public Int64 item0_code { get; set; } = -1;
+    public Int32 item0_code { get; set; } = -1;
     public Int64 item0_count { get; set; } = -1;
-    public Int64 item1_code { get; set; } = -1;
+    public Int32 item1_code { get; set; } = -1;
     public Int64 item1_count { get; set; } = -1;
-    public Int64 item2_code { get; set; } = -1;
+    public Int32 item2_code { get; set; } = -1;
     public Int64 item2_count { get; set; } = -1;
-    public Int64 item3_code { get; set; } = -1;
+    public Int32 item3_code { get; set; } = -1;
     public Int64 item3_count { get; set; } = -1;
     public String mail_title { get; set; }
     public DateTime read_date { get; set; } = new DateTime(9999, 12, 31, 23, 59, 59);
@@ -21,20 +18,19 @@ public class Mail
 {
     public Int64 mail_id { get; set; }
     public Int64 user_id { get; set; }
-    public Int64 item0_code { get; set; } = -1;
+    public Int32 item0_code { get; set; } = -1;
     public Int64 item0_count { get; set; } = -1;
-    public Int64 item1_code { get; set; } = -1;
+    public Int32 item1_code { get; set; } = -1;
     public Int64 item1_count { get; set; } = -1;
-    public Int64 item2_code { get; set; } = -1;
+    public Int32 item2_code { get; set; } = -1;
     public Int64 item2_count { get; set; } = -1;
-    public Int64 item3_code { get; set; } = -1;
+    public Int32 item3_code { get; set; } = -1;
     public Int64 item3_count { get; set; } = -1;
     public String mail_title { get; set; }
     public String mail_text { get; set; }
     public DateTime read_date { get; set; } = new DateTime(9999, 12, 31, 23, 59, 59);
     public DateTime recieve_date { get; set; }
     public DateTime expiration_date { get; set; }
-    //public Int16 is_deleted { get; set; } = 0;
 
     public List<ItemBundle>? AttachedItemBundle()
     {

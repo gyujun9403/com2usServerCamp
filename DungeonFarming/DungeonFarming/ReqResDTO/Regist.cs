@@ -6,7 +6,7 @@ public class RegisteRequest
     [MinLength(3, ErrorMessage = "Minimum  ID length is 3")]
     [MaxLength(20, ErrorMessage = "Maximum ID length is 20")]
     [RegularExpression("^[a-zA-Z0-9_-]+$", ErrorMessage = "Illegal characters in ID")]
-    public String userId { get; set; }
+    public String userAssignedId { get; set; }
 
     [Required]
     [MinLength(6, ErrorMessage = "Minimum Password length is 6")]
