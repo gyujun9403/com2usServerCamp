@@ -1,14 +1,10 @@
 ﻿using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameSessionDb;
 using DungeonFarming.DataBase.GameDb.GameDbModel;
-using DungeonFarming.DataBase.GameDb.MasterDataModel;
-using DungeonFarming.DTO;
-using DungeonFarming.ReqResDTO;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using ZLogger;
 using DungeonFarming.DataBaseServices.GameDb.MasterDataModel;
+using DungeonFarming.Controllers.ReqResModel;
 
 namespace DungeonFarming.Controllers
 {

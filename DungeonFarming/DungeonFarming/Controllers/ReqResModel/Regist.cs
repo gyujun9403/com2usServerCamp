@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+namespace DungeonFarming.Controllers.ReqResModel;
 public class RegisteRequest
 {
     [Required]

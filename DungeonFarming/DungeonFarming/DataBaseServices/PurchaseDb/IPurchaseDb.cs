@@ -1,11 +1,8 @@
-﻿namespace DungeonFarming.DataBase.PurchaseDb
+﻿namespace DungeonFarming.DataBase.PurchaseDb;
+
+public interface IPurchaseDb
 {
-    public interface IPurchaseDb
-    {
-        Task<ErrorCode> CheckPurchaseDuplicated(string purchaseToken);
-        Task<ErrorCode> WritePurchase(long userId, string purchaseToken, short packageCode);
-        Task<ErrorCode> DeletePurchase(long userId, string purchaseToken, short packageCode);
-    }
-
-
+    Task<ErrorCode> CheckPurchaseDuplicated(string purchaseToken);
+    Task<ErrorCode> WritePurchase(long userId, string purchaseToken, short packageCode);
+    Task<ErrorCode> DeletePurchase(long userId, string purchaseToken, short packageCode);
 }

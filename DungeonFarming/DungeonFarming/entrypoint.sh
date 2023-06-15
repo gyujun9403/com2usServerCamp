@@ -6,3 +6,5 @@ sleep 30
 echo "API Server Start"
 
 dotnet DungeonFarming.dll
+
+

@@ -1,9 +1,7 @@
-﻿using DungeonFarming.DataBase.AccountDb;
+﻿using DungeonFarming.Controllers.ReqResModel;
 using DungeonFarming.DataBase.GameDb;
 using DungeonFarming.DataBase.GameDb.GameDbModel;
 using DungeonFarming.DataBase.GameSessionDb;
-using DungeonFarming.DTO;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ZLogger;
 
